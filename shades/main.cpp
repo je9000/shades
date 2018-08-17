@@ -32,7 +32,9 @@ bool print_icmp(NetworkingInput &ni, PacketHeader &p1, PacketHeader &pN, void *)
 }
 
 int main(int argc, const char *argv[]) {
+#ifndef DEBUG
     std::set_terminate(on_terminate);
+#endif
     
     std::string iface = "en0";
     std::string my_ip = "192.168.0.254/32";

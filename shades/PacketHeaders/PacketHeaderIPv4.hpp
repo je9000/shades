@@ -331,7 +331,7 @@ public:
     
     uint16_t calculate_checksum() const {
         InetChecksumCalculator icc;
-        icc.checksum_update(pbo.data(), pbo.size());
+        icc.checksum_update(pbo.data(), header_size());
         return icc.checksum_finalize();
     }
     
@@ -343,7 +343,11 @@ public:
     virtual void check() const {
         if (version() != 4) throw invalid_packet("IPv4 header version != 4");
         if (header_length_qwords() > IPV4_MAX_HEADER_LENGTH_QWORDS || header_length_qwords() < IPV4_MIN_HEADER_LENGTH_QWORDS) throw invalid_packet("Header length");
-        if (calculate_checksum() != 0) throw invalid_packet("Checksum");
+        if (calculate_checksum() != 0) {
+            std::cerr << *this;
+            throw invalid_packet("Checksum");
+            
+        }
     }
     virtual std::unique_ptr<PacketHeader> recalculate_next_header() const;
     
@@ -373,6 +377,9 @@ void PacketHeaderIPv4::print(std::ostream &os) const {
     os << " Size: " << size() << "\n";
     os << " ID: " << ipid() << "\n";
     os << " Flags and Frag Offset: " << flags_frag_offset() << "\n";
+    os << "  Don't Fragment: " << flag_df() << "\n";
+    os << "  More Fragments: " << flag_mf() << "\n";
+    os << "  Fragment Offset: " << frag_offset() << "\n";
     os << " TTL: " << static_cast<uint32_t>(ttl()) << "\n";
     os << " Protocol: " << static_cast<uint32_t>(protocol()) << "\n";
     os << " Checksum: " << checksum() << "\n";
