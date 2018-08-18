@@ -13,7 +13,7 @@
 template <size_t STACK_ELEMENTS>
 class StackTracePrinter {
 public:
-    void operator()() {
+    inline void operator()() {
         std::array<void *, STACK_ELEMENTS> elems;
         int count = backtrace(elems.data(), elems.size());
         char **symbols = backtrace_symbols(elems.data(), elems.size());
@@ -67,7 +67,7 @@ public:
         free(symbols);
     }
 
-    void pretty_mangled_name(const std::string &sv) {
+    inline void pretty_mangled_name(const std::string &sv) {
         int status;
         if (char *dm = abi::__cxa_demangle(sv.data(), 0, 0, &status)) {
             std::clog << dm;

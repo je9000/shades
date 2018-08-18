@@ -19,7 +19,7 @@ public:
         return ntohs(c);
     }
     
-    void checksum_update(void *buf, size_t len) {
+    inline void checksum_update(void *buf, size_t len) {
         may_alias_ushort_ptr words = static_cast<may_alias_ushort_ptr>(buf);
         may_alias_uchar_ptr bytes = static_cast<may_alias_uchar_ptr>(buf);
         
@@ -32,7 +32,7 @@ public:
         }
     }
     
-    void reset() { checksum = 0; }
+    inline void reset() { checksum = 0; }
 };
 
 #endif /* checksum_h */

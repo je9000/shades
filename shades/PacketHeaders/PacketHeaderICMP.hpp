@@ -1,8 +1,6 @@
 #ifndef PacketHeaderICMP_h
 #define PacketHeaderICMP_h
 
-#include <string>
-
 #include "HexDump.hpp"
 #include "InetChecksum.hpp"
 #include "PacketHeader.hpp"
@@ -84,32 +82,16 @@ public:
     
     void print(std::ostream &) const ;
     
-    size_t header_size() const {
+    inline size_t header_size() const {
         return 4;
     }
     
-    uint16_t calculate_checksum() const {
-        InetChecksumCalculator icc;
-        icc.checksum_update(pbo.data(), pbo.size());
-        return icc.checksum_finalize();
-    }
+    uint16_t calculate_checksum() const;
     
-    void update_checksum() {
-        checksum = 0;
-        checksum = calculate_checksum();
-    }
+    void update_checksum();
     
-    virtual void check() const {
-        if (calculate_checksum() != 0) throw invalid_packet("Checksum");
-    }
+    void check() const;
 };
-
-void PacketHeaderICMP::print(std::ostream &os) const {
-    os << "ICMP packet:\n";
-    os << " Type: " << static_cast<uint32_t>(type()) << "\n";
-    os << " Code: " << static_cast<uint32_t>(code()) << "\n";
-    os << " Checksum: " << checksum() << "\n";
-}
 
 // Echo
 class PacketHeaderICMPEcho : public PacketHeader {
@@ -123,20 +105,13 @@ public:
         seq(*this)
     {}
     
-    virtual void check() const {}
+    void check() const {};
     
     void print(std::ostream &) const;
     
-    size_t header_size() const {
+    inline size_t header_size() const {
         return 4;
     }
 };
-
-void PacketHeaderICMPEcho::print(std::ostream &os) const {
-    os << "ICMP Echo/Reply packet:\n";
-    os << " Ident: " << static_cast<uint32_t>(ident()) << "\n";
-    os << " Seq: " << static_cast<uint32_t>(seq()) << "\n";
-    os << " Data: " << next_header_offset() << "\n";
-}
 
 #endif /* PacketHeaderICMP_h */

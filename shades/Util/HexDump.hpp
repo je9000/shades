@@ -10,12 +10,12 @@ class HexDumpCharHelper {
 public:
     HexDumpCharHelper(const unsigned char *pi, size_t si) : p(pi), s(si) {};
     
-    unsigned char at(size_t n) const {
+    inline unsigned char at(size_t n) const {
         if (n >= s) throw std::overflow_error("Invalid offset");
         return p[n];
     }
     
-    size_t size() const {
+    inline size_t size() const {
         return s;
     }
 };

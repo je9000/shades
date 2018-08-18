@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <typeindex>
 
 #include "ARPTable.hpp"
 #include "PacketHeaderEthernet.hpp"

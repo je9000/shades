@@ -21,43 +21,43 @@ protected:
     template <size_t, class> friend class BufferOffsetType;
 public:
     virtual ~PacketHeader() {}
-    PacketHeader(PacketBufferOffset source_pbo) : pbo(source_pbo) {}
-    PacketHeader(const PacketHeader &p) = delete; // Copy the underlying PacketBuffer instead.
+    inline PacketHeader(PacketBufferOffset source_pbo) : pbo(source_pbo) {}
+    inline PacketHeader(const PacketHeader &p) = delete; // Copy the underlying PacketBuffer instead.
     friend std::ostream &operator<<(std::ostream &, const PacketHeader &);
     
     virtual size_t header_size() const = 0;
     virtual std::unique_ptr<PacketHeader> recalculate_next_header() const;
     
-    PacketBufferOffset next_header_offset() {
+    inline PacketBufferOffset next_header_offset() {
         return PacketBufferOffset(pbo, header_size());
     }
     
-    const PacketBufferOffset next_header_offset() const {
+    inline const PacketBufferOffset next_header_offset() const {
         return PacketBufferOffset(pbo, header_size());
     }
     
-    PacketHeader *previous_header() const {
+    inline PacketHeader *previous_header() const {
         throw std::logic_error("Unimplemented");
     }
     
-    PacketHeader *next_header() const {
+    inline PacketHeader *next_header() const {
         throw std::logic_error("Unimplemented");
     }
     
-    PacketBuffer &backing_buffer() const {
+    inline PacketBuffer &backing_buffer() const {
         return pbo.backing_buffer();
     }
     
-    size_t backing_buffer_offset() const {
+    inline size_t backing_buffer_offset() const {
         return pbo.backing_buffer_offset();
     }
     
     // Note! Only copies the one header, not the data or following headers!
-    void copy_header_to(PacketHeader &dest_ph) const {
+    inline void copy_header_to(PacketHeader &dest_ph) const {
         dest_ph.pbo.copy_from(pbo, header_size());
     }
     
-    virtual void check() const = 0;
+    virtual inline void check() const = 0;
 };
 
 std::ostream &operator<<(std::ostream &os, const PacketHeader &ph) {

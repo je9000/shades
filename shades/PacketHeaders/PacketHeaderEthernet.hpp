@@ -47,32 +47,34 @@ public:
         return addr;
     }
     
-    void operator=(const std::string_view src) {
+    inline void operator=(const std::string_view src) {
         address = mac_from_string(src);
     }
     
-    bool operator==(const EthernetAddress &other) {
+    inline bool operator==(const EthernetAddress &other) {
         return address == other.address;
     }
     
-    bool operator!=(const EthernetAddress &other) {
+    inline bool operator!=(const EthernetAddress &other) {
         return address != other.address;
     }
     
-    uint8_t &operator[](size_t offset) {
+    inline uint8_t &operator[](size_t offset) {
         return address[offset];
     }
     
-    uint8_t *data() {
+    inline uint8_t *data() {
         return address.data();
     }
     
-    static size_t size() {
+    inline static size_t size() {
         return sizeof(address);
     }
     
     EthernetAddressActual address;
 };
+
+std::ostream &operator<<(std::ostream &, const EthernetAddress &) ;
 
 const EthernetAddress ETHER_ADDR_BROADCAST("FF:FF:FF:FF:FF:FF");
 const EthernetAddress ETHER_ADDR_ZERO("00:00:00:00:00:00");
@@ -484,38 +486,18 @@ public:
         ether_type(*this)
     {}
     
-    void check() const {
-        if (ether_type() <= 1500) throw invalid_packet("Raw IEEE 802.3, 802.2 not supported");
-        if (ether_type() <= 1536 /* && > 1500 */) throw invalid_packet("Invalid ethertype");
-    };
+    void check() const;
     
     void print(std::ostream &) const;
     
-    size_t header_size() const {
+    inline size_t header_size() const {
         return 14;
     }
     
     virtual std::unique_ptr<PacketHeader> recalculate_next_header() const;
     
-    void build(const EthernetAddress &src_eth, const EthernetAddress &dest_eth, const ETHERTYPE::ETHERTYPE type) {
-        dest = dest_eth;
-        source = src_eth;
-        ether_type = type;
-    }
+    void build(const EthernetAddress &src_eth, const EthernetAddress &dest_eth, const ETHERTYPE::ETHERTYPE type);
 };
 
-std::ostream &operator<<(std::ostream &os, const EthernetAddress &ea) {
-    os << HexDump<EthernetAddressActual>(ea.address, ':', 0);
-    return os;
-}
-
-void PacketHeaderEthernet::print(std::ostream &os) const {
-    os << "Ethernet frame:\n";
-    os << " Dest MAC: " << dest() << "\n";
-    os << " Source MAC: " << source() << "\n";
-    os << " EtherType: " << ether_type() << " (" << ETHERNET_TYPE_INFO(ether_type()) << ")\n";
-    //os << " Tag: " << tag() << "\n";
-    //os << " CRC32: " << crc() << "\n";
-}
 
 #endif /* PacketHeaderEthernet_h */

@@ -7,6 +7,7 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#include <typeindex>
 
 #include "IPv4RouteTable.hpp"
 #include "PacketHeaderIPv4.hpp"
@@ -127,7 +128,7 @@ public:
         
         size_t expected_next_offset = 0;
         size_t total_ipv4_content_size = 0;
-        for (auto &p : packets) {
+        for (const auto &p : packets) {
             if (p.offset != expected_next_offset) return nullptr;
             expected_next_offset += p.ipv4_data_len / 8;
             total_ipv4_content_size += p.ipv4_data_len;
@@ -140,7 +141,7 @@ public:
         ip_header.copy_header_to(new_ipv4);
         PacketBufferOffset ip_data_pbo = new_ipv4.next_header_offset();
         size_t data_offset = 0;
-        for (auto &p : packets) {
+        for (const auto &p : packets) {
             ip_data_pbo.copy_from(p.ip_header.next_header_offset(), p.ip_header.data_size(), data_offset);
             data_offset += p.ip_header.data_size();
         }
@@ -206,6 +207,7 @@ public:
     }
     
     bool process(PacketHeaderIPv4 &packet) {
+        if (packet.checksum() % 2) clean(); // We should clean periodically, but we can optimize later.
         if (IPv4FlowPendingReassembly::needs_reassembly(packet)) {
             return possibly_reassemble(packet);
         }
@@ -227,6 +229,7 @@ public:
         pending->second.add_packet(packet);
         try {
             if (auto r = pending->second.try_reassemble()) {
+                pending_reassembly.erase(pending);
                 PacketHeaderIPv4 assembeled_ipv4(*r);
                 return process_next_header(assembeled_ipv4);
             }
@@ -236,6 +239,8 @@ public:
 
         return true;
     }
+    
+    void send(const IPv4Address &, const IPPROTO::IPPROTO, const PacketBufferOffset &);
 };
 
 #endif /* NetworkingIPv4_hpp */

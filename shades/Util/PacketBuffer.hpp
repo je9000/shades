@@ -27,7 +27,9 @@ enum PacketBufferHeaderType {
 class PacketBuffer {
 private:
     PacketBufferHeaderType header_type = HEADER_UNKNOWN;
-    size_t reserved_header_space = 16;
+protected:
+    friend PacketBufferOffset;
+    size_t reserved_header_space = 64;
 public:
     PacketBuffer() {
         buffer.resize(MAX_FRAME_SIZE + reserved_header_space);
@@ -55,6 +57,11 @@ public:
     
     size_t reserved_size() const {
         return reserved_header_space;
+    }
+    
+    void unreserve_space(size_t amount) {
+        if (amount > reserved_header_space) throw std::out_of_range("Not enough reserved space");
+        reserved_header_space -= amount;
     }
     
     void set_valid_size(size_t len) {
@@ -89,32 +96,44 @@ std::ostream& operator<<(std::ostream &os, const PacketBuffer &pb)
 class PacketBufferOffset {
 private:
     PacketBuffer &pb;
-    size_t offset;
+    mutable size_t offset;
+    mutable size_t original_reserved_header_space;
 public:
-    PacketBufferOffset(PacketBuffer &pb, size_t next_offset) : pb(pb), offset(next_offset) {
+    PacketBufferOffset(PacketBuffer &base_pb, size_t next_offset) : pb(base_pb), offset(next_offset), original_reserved_header_space(base_pb.reserved_header_space) {
         if (next_offset >= pb.size()) throw std::out_of_range("Offset too large!");
     }
     
-    PacketBufferOffset(PacketBufferOffset &pbo, size_t next_offset) : pb(pbo.pb), offset(next_offset + pbo.offset) {
+    PacketBufferOffset(PacketBufferOffset &pbo, size_t next_offset) : pb(pbo.pb), offset(next_offset + pbo.offset), original_reserved_header_space(pbo.pb.reserved_header_space) {
         if (next_offset >= pb.size()) throw std::out_of_range("Offset too large!");
     }
     
-    PacketBufferOffset(const PacketBufferOffset &pbo, size_t next_offset) : pb(pbo.pb), offset(next_offset + pbo.offset) {
+    PacketBufferOffset(const PacketBufferOffset &pbo, size_t next_offset) : pb(pbo.pb), offset(next_offset + pbo.offset), original_reserved_header_space(pbo.pb.reserved_header_space) {
         if (next_offset >= pb.size()) throw std::out_of_range("Offset too large!");
     }
     
     //PacketBufferOffset(PacketBufferOffset &pbo) : pbo(pbo.pbo), offset(0) {}
-    PacketBufferOffset(PacketBuffer &pb) : pb(pb), offset(0) {}
+    PacketBufferOffset(PacketBuffer &base_pb) : pb(base_pb), offset(0), original_reserved_header_space(base_pb.reserved_header_space) {}
+    
+    void adjust_offset() const {
+        ssize_t diff = original_reserved_header_space - pb.reserved_header_space;
+        if (diff == 0) return;
+        if (offset + diff > pb.size()) throw std::out_of_range("reserved size changed too much");
+        original_reserved_header_space = pb.reserved_header_space;
+        offset += diff;
+    }
     
     size_t size() const {
+        adjust_offset();
         return pb.size() - offset;
     }
     
     unsigned char *data() const {
+        adjust_offset();
         return &pb.at(offset);
     }
     
     unsigned char *at(size_t o2) const {
+        adjust_offset();
         size_t pos = offset + o2;
         if (pos < offset) throw std::length_error("offset too large");
         return &pb.at(pos);
@@ -125,6 +144,7 @@ public:
     }
     
     size_t backing_buffer_offset() const {
+        adjust_offset();
         return offset;
     }
 

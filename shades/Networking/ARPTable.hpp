@@ -43,7 +43,6 @@ public:
     }
     
     void insert_or_assign(const IPv4Address &ip, const EthernetAddress &eth, std::chrono::seconds duration) {
-        std::clog << "Learned " << ip << " is on " << eth << "\n";
         steady_clock_time expire_time;
         if (duration.count()) {
             expire_time = steady_clock::now() + duration;

@@ -245,6 +245,4 @@ EthernetAddress Networking::get_interface_mac(const std::string_view ifn) {
 #error Do not know how to get MAC address on this platform.
 #endif
 
-#include "NetworkingEthernetARPCallback.hpp"
-
 #endif /* Networking_h */
