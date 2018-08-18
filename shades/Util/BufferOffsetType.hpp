@@ -14,7 +14,7 @@ template <size_t O>
 class PacketBufferOffsetTypeBase {
 protected:
     PacketHeader &ph;
-    void check_offset(const size_t s) const {
+    inline void check_offset(const size_t s) const {
         size_t pos = O + s;
         if (pos < O || pos > ph.pbo.size()) throw std::out_of_range("offset too large for buffer");
     }

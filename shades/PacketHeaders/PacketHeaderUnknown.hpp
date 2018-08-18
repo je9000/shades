@@ -7,13 +7,13 @@
 class PacketHeaderUnknown : public PacketHeader {
 public:
     PacketHeaderUnknown(PacketBufferOffset source_pbo) : PacketHeader(source_pbo) {}
-    void print(std::ostream &os) const {
+    inline void print(std::ostream &os) const {
         os << " UNKNOWN HEADER\n";
     }
-    size_t header_size() const {
+    inline size_t header_size() const {
         throw std::runtime_error("Can't get size for unknown header");
     }
-    virtual void check() const {}
+    inline void check() const {}
 };
 
 #endif /* PacketHeaderUnknown_h */

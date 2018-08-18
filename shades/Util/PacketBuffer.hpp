@@ -31,67 +31,32 @@ protected:
     friend PacketBufferOffset;
     size_t reserved_header_space = 64;
 public:
-    PacketBuffer() {
-        buffer.resize(MAX_FRAME_SIZE + reserved_header_space);
-    }
+    PacketBuffer();
     
-    PacketBuffer(size_t x) {
-        buffer.resize(x + reserved_header_space);
-    }
+    PacketBuffer(size_t);
 
-    size_t size() const {
-        return buffer.size() - reserved_header_space;
-    }
+    size_t size() const;
     
-    unsigned char *data() {
-        return &buffer.at(reserved_header_space);
-    }
+    unsigned char *data();
     
-    unsigned char &at(size_t n) {
-        return buffer.at(reserved_header_space + n);
-    }
+    unsigned char &at(size_t n);
+
+    unsigned char *reserved_data();
     
-    unsigned char *reserved_data() {
-        return buffer.data();
-    }
+    size_t reserved_size() const;
     
-    size_t reserved_size() const {
-        return reserved_header_space;
-    }
+    void unreserve_space(size_t);
     
-    void unreserve_space(size_t amount) {
-        if (amount > reserved_header_space) throw std::out_of_range("Not enough reserved space");
-        reserved_header_space -= amount;
-    }
+    void set_valid_size(size_t);
     
-    void set_valid_size(size_t len) {
-        size_t real_len = len + reserved_header_space;
-        if (real_len < len || len + reserved_header_space > MAX_SANE_FRAME_SIZE) throw std::out_of_range("> buffer.max_size");
-        buffer.resize(real_len);
-    }
+    void copy_from(const unsigned char *, size_t, PacketBufferHeaderType);
     
-    void copy_from(const unsigned char *src, size_t len, PacketBufferHeaderType ht) {
-        if (!src) throw std::runtime_error("Invalid data");
-        size_t real_len = len + reserved_header_space;
-        if (real_len < len || real_len > MAX_SANE_FRAME_SIZE) throw std::out_of_range("> buffer.max_size");
-        buffer.resize(real_len);
-        if (len) memcpy(data(), src, len);
-        header_type = ht;
-    }
-    
-    PacketBufferHeaderType get_header_type() const { return header_type; }
+    PacketBufferHeaderType get_header_type() const;
     
     PacketBufferOffset offset(size_t);
 
     std::vector<unsigned char> buffer;
 };
-
-std::ostream& operator<<(std::ostream &os, const PacketBuffer &pb)
-{
-    os << "PacketBuffer (" << pb.size() << " bytes, +" << pb.reserved_size() << " reserved):\n";
-    os << HexDump<decltype(pb.buffer)>(pb.buffer) << '\n';
-    return os;
-}
 
 class PacketBufferOffset {
 private:
@@ -114,56 +79,21 @@ public:
     //PacketBufferOffset(PacketBufferOffset &pbo) : pbo(pbo.pbo), offset(0) {}
     PacketBufferOffset(PacketBuffer &base_pb) : pb(base_pb), offset(0), original_reserved_header_space(base_pb.reserved_header_space) {}
     
-    void adjust_offset() const {
-        ssize_t diff = original_reserved_header_space - pb.reserved_header_space;
-        if (diff == 0) return;
-        if (offset + diff > pb.size()) throw std::out_of_range("reserved size changed too much");
-        original_reserved_header_space = pb.reserved_header_space;
-        offset += diff;
-    }
+    friend std::ostream& operator<<(std::ostream &, const PacketBufferOffset &);
     
-    size_t size() const {
-        adjust_offset();
-        return pb.size() - offset;
-    }
+    void adjust_offset() const;
     
-    unsigned char *data() const {
-        adjust_offset();
-        return &pb.at(offset);
-    }
+    size_t size() const;
     
-    unsigned char *at(size_t o2) const {
-        adjust_offset();
-        size_t pos = offset + o2;
-        if (pos < offset) throw std::length_error("offset too large");
-        return &pb.at(pos);
-    }
+    unsigned char *data() const;
     
-    PacketBuffer &backing_buffer() const {
-        return pb;
-    }
+    unsigned char *at(size_t o2) const;
     
-    size_t backing_buffer_offset() const {
-        adjust_offset();
-        return offset;
-    }
+    PacketBuffer &backing_buffer() const;
+    
+    size_t backing_buffer_offset() const;
 
-    void copy_from(const PacketBufferOffset &source_pbo, size_t len, size_t dest_offset = 0) {
-        size_t new_end_pos = len + dest_offset;
-        if (new_end_pos < len || new_end_pos > size()) throw std::length_error("not enough room in buffer");
-        memcpy(at(dest_offset), source_pbo.data(), len);
-    }
+    void copy_from(const PacketBufferOffset &, size_t, size_t = 0);
 };
-
-std::ostream& operator<<(std::ostream& os, const PacketBufferOffset& pbo) {
-    os << "PacketBufferOffset (" << pbo.size() << " bytes):\n";
-    HexDumpCharHelper hdch(pbo.data(), pbo.size());
-    os << " Data:\n" << HexDump<HexDumpCharHelper>(hdch, 80) << "\n";
-    return os;
-}
-
-PacketBufferOffset PacketBuffer::offset(size_t o) {
-    return PacketBufferOffset(*this, o + reserved_header_space);
-}
 
 #endif /* PacketBuffer_h */

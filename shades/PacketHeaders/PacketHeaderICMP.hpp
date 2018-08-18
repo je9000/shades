@@ -80,7 +80,7 @@ public:
         checksum(*this)
     {}
     
-    void print(std::ostream &) const ;
+    void print(std::ostream &) const;
     
     inline size_t header_size() const {
         return 4;

@@ -1,6 +1,9 @@
 #ifndef checksum_h
 #define checksum_h
 
+#include <cstdint>
+#include <arpa/inet.h>
+
 typedef uint16_t InetChecksum;
 
 typedef unsigned short * __attribute__((__may_alias__)) may_alias_ushort_ptr;

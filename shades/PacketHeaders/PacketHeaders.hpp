@@ -11,6 +11,5 @@
 #include "PacketHeaderARP.hpp"
 #include "PacketHeaderTCP.hpp"
 #include "PacketHeaderUDP.hpp"
-#include "NextHeader.hpp"
 
 #endif /* PacketHeaders_h */

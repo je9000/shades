@@ -1,7 +1,5 @@
-#include <string>
-
-#include "HexDump.hpp"
 #include "PacketHeaderICMP.hpp"
+#include "InetChecksum.hpp"
 
 uint16_t PacketHeaderICMP::calculate_checksum() const {
     InetChecksumCalculator icc;

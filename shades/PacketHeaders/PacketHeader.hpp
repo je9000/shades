@@ -21,8 +21,8 @@ protected:
     template <size_t, class> friend class BufferOffsetType;
 public:
     virtual ~PacketHeader() {}
-    inline PacketHeader(PacketBufferOffset source_pbo) : pbo(source_pbo) {}
-    inline PacketHeader(const PacketHeader &p) = delete; // Copy the underlying PacketBuffer instead.
+    PacketHeader(PacketBufferOffset source_pbo) : pbo(source_pbo) {}
+    PacketHeader(const PacketHeader &p) = delete; // Copy the underlying PacketBuffer instead.
     friend std::ostream &operator<<(std::ostream &, const PacketHeader &);
     
     virtual size_t header_size() const = 0;
@@ -57,12 +57,7 @@ public:
         dest_ph.pbo.copy_from(pbo, header_size());
     }
     
-    virtual inline void check() const = 0;
+    virtual void check() const = 0;
 };
-
-std::ostream &operator<<(std::ostream &os, const PacketHeader &ph) {
-    ph.print(os);
-    return os;
-}
 
 #endif /* PacketHeader_h */

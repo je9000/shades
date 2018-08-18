@@ -62,33 +62,15 @@ public:
     
     void print(std::ostream &) const ;
     
-    size_t header_size() const {
+    inline size_t header_size() const {
         return 8;
     }
     
-    uint16_t calculate_checksum() const {
-        InetChecksumCalculator icc;
-        icc.checksum_update(pbo.data(), pbo.size());
-        return icc.checksum_finalize();
-    }
+    uint16_t calculate_checksum() const;
     
-    void update_checksum() {
-        checksum = 0;
-        checksum = calculate_checksum();
-    }
+    void update_checksum();
     
-    virtual void check() const {
-        // Checksum is optional in IPv4 and mandatory in IPv6.
-        if ((checksum_matters || checksum() != 0) && (calculate_checksum() != 0)) throw invalid_packet("Checksum");
-    }
+    virtual void check() const;
 };
-
-void PacketHeaderUDP::print(std::ostream &os) const {
-    os << "UDP packet:\n";
-    os << " Source Port: " << source_port() << "\n";
-    os << " Desk Port: " << dest_port() << "\n";
-    os << " Length: " << length() << "\n";
-    os << " Checksum: " << checksum() << "\n";
-}
 
 #endif /* PacketHeaderUDP_h */
