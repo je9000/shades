@@ -30,7 +30,7 @@ std::unique_ptr<PacketBuffer> IPv4FlowPendingReassembly::try_reassemble() {
     auto &ip_header = packets.begin()->ip_header;
     auto new_buf = std::make_unique<PacketBuffer>(total_ipv4_content_size + ip_header.header_size());
     PacketHeaderIPv4 new_ipv4(*new_buf);
-    ip_header.copy_header_to(new_ipv4);
+    new_ipv4.copy_from(ip_header);
     PacketBufferOffset ip_data_pbo = new_ipv4.next_header_offset();
     size_t data_offset = 0;
     for (const auto &p : packets) {
@@ -41,6 +41,12 @@ std::unique_ptr<PacketBuffer> IPv4FlowPendingReassembly::try_reassemble() {
 }
 
 //NetworkingIPv4
+NetworkingIPv4::NetworkingIPv4(Networking &n) : networking(n) {
+    register_callback(typeid(PacketHeaderICMP),
+                      [this](NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4, void *d) { return icmp_echo_callback(nv4, ipv4, d); }
+                     );
+}
+
 void NetworkingIPv4::clean() {
     auto now = steady_clock::now();
     for (auto it = pending_reassembly.begin(); it != pending_reassembly.end(); ++it) {
@@ -115,15 +121,38 @@ bool NetworkingIPv4::possibly_reassemble(PacketHeaderIPv4 &packet) {
     return true;
 }
 
-void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto, const PacketBufferOffset &pbo) {
-    PacketBuffer pb = pbo.backing_buffer();
-    pb.unreserve_space(20);
-    PacketHeaderIPv4 ipv4(pb.offset(0));
+void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto, PacketBuffer &pb) {
+    size_t data_size = pb.size();
+    pb.unreserve_space(PacketHeaderTCP::minimum_header_size());
+    PacketHeaderIPv4 ipv4(pb);
     
-    ipv4.source = networking.my_ip;
-    ipv4.dest = dest;
-    ipv4.protocol = proto;
-    ipv4.update_checksum();
+    ipv4.build(networking.my_ip, dest, data_size, proto);
+    // TODO: Fragment
     
-    networking.net_driver.send(pb);
+    networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb);
+}
+
+bool NetworkingIPv4::icmp_echo_callback(NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4, void *) {
+    if (ipv4.protocol() != IPPROTO::ICMP) return true;
+    PacketHeaderICMP incoming_icmp(ipv4.next_header_offset());
+    if (incoming_icmp.type() != ICMP::ECHO) return true;
+    PacketHeaderICMPEcho incoming_echo(incoming_icmp.next_header_offset());
+    auto incoming_echo_data = incoming_echo.next_header_offset();
+    
+    PacketBuffer pb(PacketHeaderICMP::minimum_header_size() + PacketHeaderICMPEcho::minimum_header_size() + incoming_echo_data.size());
+    PacketHeaderICMP new_icmp(pb);
+    PacketHeaderICMPEcho new_echo(new_icmp.next_header_offset());
+ 
+    auto outgoing_echo_data = new_echo.next_header_offset();
+    
+    outgoing_echo_data.copy_from(incoming_echo_data);
+    new_echo.seq = incoming_echo.seq();
+    new_echo.ident = incoming_echo.ident();
+    
+    new_icmp.type = ICMP::ECHOREPLY;
+    new_icmp.code = 0;
+    new_icmp.update_checksum();
+    
+    nv4.send(ipv4.source(), IPPROTO::ICMP, pb);
+    return true;
 }

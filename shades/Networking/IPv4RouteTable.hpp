@@ -22,7 +22,7 @@ private:
     IPv4Address default_route;
     std::array<IPv4RouteTableActual, 32> routes_per_mask; // we don't store mask of /0
 public:
-    const IPv4Address get(const IPv4Address &dest) {
+    inline const IPv4Address get(const IPv4Address &dest) {
         for(size_t i = 32; i > 0; i--) {
             auto masked_dest = dest.apply_mask_bits(i);
             auto found = routes_per_mask[i - 1].find(masked_dest);
@@ -34,7 +34,7 @@ public:
         throw std::runtime_error("No route to host");
     }
 
-    void set(const IPv4Address &dest, size_t mask_bits, const IPv4Address &gw) {
+    inline void set(const IPv4Address &dest, size_t mask_bits, const IPv4Address &gw) {
         if (mask_bits > 32) throw std::out_of_range("Mask bits must be <= 32");
         if (!gw) throw std::runtime_error("Invalid gateway");
         if (mask_bits == 0) {
@@ -47,7 +47,7 @@ public:
         table.insert({masked_dest, gw});
     }
     
-    void remove(const IPv4Address &dest, size_t mask_bits) {
+    inline void remove(const IPv4Address &dest, size_t mask_bits) {
         if (mask_bits > 32) throw std::out_of_range("Mask bits must be <= 32");
         if (mask_bits == 0) {
             default_route.ip_int = 0;

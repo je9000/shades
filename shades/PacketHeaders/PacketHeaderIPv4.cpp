@@ -63,24 +63,20 @@ void PacketHeaderIPv4::update_checksum() {
 void PacketHeaderIPv4::check() const {
     if (version() != 4) throw invalid_packet("IPv4 header version != 4");
     if (header_length_qwords() > IPV4_MAX_HEADER_LENGTH_QWORDS || header_length_qwords() < IPV4_MIN_HEADER_LENGTH_QWORDS) throw invalid_packet("Header length");
-    if (calculate_checksum() != 0) {
-        std::cerr << *this;
-        throw invalid_packet("Checksum");
-        
-    }
+    if (calculate_checksum() != 0) throw invalid_packet("Checksum");
 }
 
 void PacketHeaderIPv4::build(const IPv4Address src_ip, const IPv4Address dest_ip, const uint16_t data_size, const IPPROTO::IPPROTO next_protocol) {
     version(4);
     header_length_bytes(20);
     flags_frag_offset = 0;
-    ipid = 0;
+    ipid = 0x4a45;  // RFC 6864 says this value is meaningless for unfragmented packets.
     dscp_ecn = 0;
-    ttl = 128;
+    ttl = 64;
     source = src_ip;
     dest = dest_ip;
     protocol = next_protocol;
-    size = data_size;
+    size = data_size + header_length_bytes();
     update_checksum();
 }
 

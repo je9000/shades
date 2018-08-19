@@ -31,9 +31,6 @@ Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_ma
     net_in.register_callback(typeid(PacketHeaderIPv4),
                              [this](NetworkingInput &ni, PacketHeader &p1, PacketHeader &pN, void *d) { return ipv4_callback(ni, p1, pN, d); }
                              );
-    net_in.register_callback(typeid(PacketHeaderICMPEcho),
-                             [this](NetworkingInput &ni, PacketHeader &p1, PacketHeader &pN, void *d) { return icmp_echo_callback(ni, p1, pN, d); }
-                             );
 }
 
 // Implements ethernet promiscuous mode.
@@ -52,45 +49,6 @@ bool Networking::ipv4_callback(NetworkingInput &, PacketHeader &p1, PacketHeader
     return false;
 }
 
-// Needs to be moved to an IPv4 layer callback so fragmentation is handled for us.
-bool Networking::icmp_echo_callback(NetworkingInput &, PacketHeader &p1, PacketHeader &pN, void *) {
-    //auto &echo = dynamic_cast<PacketHeaderICMPEcho &>(pN);
-    auto &eth = dynamic_cast<PacketHeaderEthernet &>(p1);
-    PacketHeaderIPv4 ip(eth.next_header_offset());
-    PacketHeaderICMP icmp(ip.next_header_offset());
-    
-    PacketBuffer pb = eth.backing_buffer(); // copy packet
-    
-    PacketHeaderEthernet new_eth(pb);
-    PacketHeaderIPv4 new_ip(new_eth.next_header_offset());
-    PacketHeaderICMP new_icmp(new_ip.next_header_offset());
-    //PacketHeaderICMPEcho new_echo(new_icmp.next_header_offset()); // We just copy from the source.
-    
-    new_eth.source = my_mac;
-    
-    if (my_subnet_mask.same_network(my_ip, ip.source())) {
-        new_eth.dest = eth.source();
-    } else {
-        auto router_ip = ipv4_layer.routes.get(ip.source());
-        try {
-            new_eth.dest = arp_resolve(router_ip);
-        } catch (...) {
-            // ARP never resolved, nowhere to send this.
-            return false;
-        }
-    }
-    
-    new_ip.source = my_ip;
-    new_ip.dest = ip.source();
-    
-    new_icmp.type = ICMP::ECHOREPLY;
-    // data is copied because we copied the packet and the headers are the same size.
-    new_icmp.update_checksum();
-    
-    net_driver.send(pb);
-    return true;
-}
-
 void Networking::run() {
     net_in.keep_running = true;
     while(net_in.keep_running) {
@@ -103,69 +61,8 @@ void Networking::run() {
     }
 }
 
-NetworkingInput &Networking::input() { return net_in; }
-
-EthernetAddress Networking::arp_resolve(const IPv4Address &ip) {
-    try {
-        return eth_layer.arp_table.at(ip);
-    } catch (...) {
-        // Send an ARP query, listen for answers.
-        
-        PacketBuffer pb;
-        PacketHeaderEthernet eth(pb);
-        eth.source = my_mac;
-        eth.dest = ETHER_ADDR_BROADCAST;
-        eth.ether_type = ETHERTYPE::ARP;
-        PacketHeaderARP arp(eth.next_header_offset());
-        arp.sender_mac = my_mac;
-        arp.sender_ip = my_ip;
-        arp.oper = ARP::REQUEST;
-        arp.target_ip = ip;
-        arp.target_mac = ETHER_ADDR_ZERO;
-        arp.hlen = EthernetAddress::size();
-        arp.plen = IPv4Address::size();
-        arp.htype = ETHERTYPE::ETHERNET;
-        arp.ptype = ETHERTYPE::IP;
-        
-        pb.set_valid_size(eth.header_size() + arp.header_size());
-        
-        net_driver.send(pb);
-        
-        // buffer packets for a while looking for reply.
-        auto arp_search_start = std::chrono::steady_clock::now();
-        while(true) {
-            if (std::chrono::steady_clock::now() - arp_search_start > ARP_QUERY_TIMEOUT) {
-                break;
-            }
-            auto *writable = packet_queue.get_writable();
-            if (!writable) throw std::bad_alloc();
-            net_driver.recv(*writable); // recv directly so we don't trigger callbacks.
-            
-            try {
-                PacketHeaderEthernet ether(*writable);
-                ether.check();
-                if (ether.ether_type() != ETHERTYPE::ARP) {
-                    packet_queue.put_readable(writable);
-                    continue;
-                }
-                
-                PacketHeaderARP maybe_arp_reply(ether.next_header_offset());
-                maybe_arp_reply.check();
-                if (maybe_arp_reply.oper() == ARP::REPLY) {
-                    if (maybe_arp_reply.sender_ip() == ip) {
-                        eth_layer.arp_table.insert_or_assign(ip, maybe_arp_reply.sender_mac());
-                        return maybe_arp_reply.sender_mac();
-                    }
-                    packet_queue.put_readable(writable);
-                    continue;
-                }
-            } catch(...) {
-                packet_queue.put_readable(writable);
-                continue;
-            }
-        }
-    }
-    throw std::runtime_error("ARP query timeout");
+NetworkingInput &Networking::input() {
+    return net_in;
 }
 
 #ifdef SIOCGIFHWADDR

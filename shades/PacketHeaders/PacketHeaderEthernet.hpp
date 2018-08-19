@@ -494,6 +494,10 @@ public:
         return 14;
     }
     
+    static size_t minimum_header_size() {
+        return 14;
+    }
+    
     virtual std::unique_ptr<PacketHeader> recalculate_next_header() const;
     
     void build(const EthernetAddress &src_eth, const EthernetAddress &dest_eth, const ETHERTYPE::ETHERTYPE type);

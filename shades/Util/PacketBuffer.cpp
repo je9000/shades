@@ -97,6 +97,7 @@ size_t PacketBufferOffset::backing_buffer_offset() const {
 }
 
 void PacketBufferOffset::copy_from(const PacketBufferOffset &source_pbo, size_t len, size_t dest_offset) {
+    if (len == 0) len = source_pbo.size();
     size_t new_end_pos = len + dest_offset;
     if (new_end_pos < len || new_end_pos > size()) throw std::length_error("not enough room in buffer");
     memcpy(at(dest_offset), source_pbo.data(), len);

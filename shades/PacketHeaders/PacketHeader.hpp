@@ -51,10 +51,10 @@ public:
     inline size_t backing_buffer_offset() const {
         return pbo.backing_buffer_offset();
     }
-    
+
     // Note! Only copies the one header, not the data or following headers!
-    inline void copy_header_to(PacketHeader &dest_ph) const {
-        dest_ph.pbo.copy_from(pbo, header_size());
+    inline void copy_from(const PacketHeader &source_ph) {
+        pbo.copy_from(source_ph.pbo, header_size());
     }
     
     virtual void check() const = 0;

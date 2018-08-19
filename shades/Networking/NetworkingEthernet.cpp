@@ -68,3 +68,87 @@ void NetworkingEthernet::arp_callback(PacketHeaderEthernet &eth) {
         }
     }
 }
+
+EthernetAddress NetworkingEthernet::arp_resolve(const IPv4Address &ip) {
+    try {
+        return arp_table.at(ip);
+    } catch (...) {
+        // Send an ARP query, listen for answers.
+        
+        PacketBuffer pb;
+        PacketHeaderEthernet eth(pb);
+        eth.source = networking.my_mac;
+        eth.dest = ETHER_ADDR_BROADCAST;
+        eth.ether_type = ETHERTYPE::ARP;
+        PacketHeaderARP arp(eth.next_header_offset());
+        arp.sender_mac = networking.my_mac;
+        arp.sender_ip = networking.my_ip;
+        arp.oper = ARP::REQUEST;
+        arp.target_ip = ip;
+        arp.target_mac = ETHER_ADDR_ZERO;
+        arp.hlen = EthernetAddress::size();
+        arp.plen = IPv4Address::size();
+        arp.htype = ETHERTYPE::ETHERNET;
+        arp.ptype = ETHERTYPE::IP;
+        
+        pb.set_valid_size(eth.header_size() + arp.header_size());
+        
+        networking.net_driver.send(pb);
+        
+        // buffer packets for a while looking for reply. This needs to be more generalized.
+        auto arp_search_start = std::chrono::steady_clock::now();
+        while(true) {
+            if (std::chrono::steady_clock::now() - arp_search_start > ARP_QUERY_TIMEOUT) {
+                break;
+            }
+            auto *writable = networking.packet_queue.get_writable();
+            if (!writable) throw std::bad_alloc();
+            networking.net_driver.recv(*writable); // recv directly so we don't trigger callbacks.
+            
+            try {
+                PacketHeaderEthernet ether(*writable);
+                ether.check();
+                if (ether.ether_type() != ETHERTYPE::ARP) {
+                    networking.packet_queue.put_readable(writable);
+                    continue;
+                }
+                
+                PacketHeaderARP maybe_arp_reply(ether.next_header_offset());
+                maybe_arp_reply.check();
+                if (maybe_arp_reply.oper() == ARP::REPLY) {
+                    if (maybe_arp_reply.sender_ip() == ip) {
+                        arp_table.insert_or_assign(ip, maybe_arp_reply.sender_mac());
+                        return maybe_arp_reply.sender_mac();
+                    }
+                    networking.packet_queue.put_readable(writable);
+                    continue;
+                }
+            } catch(...) {
+                networking.packet_queue.put_readable(writable);
+                continue;
+            }
+        }
+    }
+    throw std::runtime_error("ARP query timeout");
+}
+
+void NetworkingEthernet::send(const IPv4Address &dest, IPv4RouteTable &routes, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb) {
+    EthernetAddress dest_mac;
+    if (networking.my_subnet_mask.same_network(networking.my_ip, dest)) {
+        dest_mac = arp_resolve(dest);
+    } else {
+        auto router_ip = routes.get(dest);
+        dest_mac = arp_resolve(router_ip);
+    }
+    
+    send(dest_mac, type, pb);
+}
+
+void NetworkingEthernet::send(const EthernetAddress &dest, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb) {
+    pb.unreserve_space(PacketHeaderEthernet::minimum_header_size());
+    PacketHeaderEthernet eth(pb);
+    
+    eth.build(networking.my_mac, dest, type);
+    
+    networking.net_driver.send(pb);
+}

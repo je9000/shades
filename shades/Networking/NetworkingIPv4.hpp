@@ -132,11 +132,11 @@ private:
 public:
     IPv4RouteTable routes;
     
-    NetworkingIPv4(Networking &n) : networking(n) {}
+    NetworkingIPv4(Networking &);
     
     void clean();
     
-    void register_callback(const std::type_info &, const NetworkingIPv4InputCallback &, void *data = nullptr);
+    void register_callback(const std::type_info &, const NetworkingIPv4InputCallback &, void * = nullptr);
     
     bool process_next_header(PacketHeaderIPv4 &);
     
@@ -144,7 +144,9 @@ public:
     
     bool possibly_reassemble(PacketHeaderIPv4 &);
     
-    void send(const IPv4Address &, const IPPROTO::IPPROTO, const PacketBufferOffset &);
+    void send(const IPv4Address &, const IPPROTO::IPPROTO, PacketBuffer &);
+    
+    bool icmp_echo_callback(NetworkingIPv4 &, PacketHeaderIPv4 &, void *);
 };
 
 #endif /* NetworkingIPv4_hpp */

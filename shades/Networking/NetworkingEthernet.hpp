@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <typeindex>
 
+#include "IPv4RouteTable.hpp"
 #include "ARPTable.hpp"
 #include "PacketHeaderEthernet.hpp"
 #include "PacketHeaderARP.hpp"
@@ -36,11 +37,14 @@ public:
     NetworkingEthernet(Networking &n) : networking(n) {}
     
     bool process(PacketHeaderEthernet &);
-    
-    void register_callback(const std::type_info &, const NetworkingEthernetInputCallback &, void *data = nullptr);
-    
     bool process_next_header(PacketHeaderEthernet &);
     
+    void register_callback(const std::type_info &, const NetworkingEthernetInputCallback &, void * = nullptr);
+    
+    void send(const IPv4Address &, IPv4RouteTable &, const ETHERTYPE::ETHERTYPE, PacketBuffer &);
+    void send(const EthernetAddress &, const ETHERTYPE::ETHERTYPE, PacketBuffer &);
+    
+    EthernetAddress arp_resolve(const IPv4Address &);
     void arp_callback(PacketHeaderEthernet &);
 };
 

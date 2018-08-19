@@ -66,6 +66,10 @@ public:
         return 8;
     }
     
+    static size_t minimum_header_size() {
+        return 8;
+    }
+    
     uint16_t calculate_checksum() const;
     
     void update_checksum();

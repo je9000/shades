@@ -293,6 +293,10 @@ public:
         return header_length_bytes();
     }
     
+    static size_t minimum_header_size() {
+        return IPV4_MIN_HEADER_LENGTH_QWORDS * 4;
+    }
+    
     inline size_t data_size() const {
         return size() - header_size();
     }

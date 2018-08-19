@@ -93,7 +93,7 @@ public:
     
     size_t backing_buffer_offset() const;
 
-    void copy_from(const PacketBufferOffset &, size_t, size_t = 0);
+    void copy_from(const PacketBufferOffset &, size_t = 0, size_t = 0);
 };
 
 #endif /* PacketBuffer_h */

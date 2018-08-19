@@ -82,9 +82,8 @@ public:
     
     void print(std::ostream &) const;
     
-    inline size_t header_size() const {
-        return 4;
-    }
+    inline size_t header_size() const { return 4; }
+    static size_t minimum_header_size() { return 4; }
     
     uint16_t calculate_checksum() const;
     
@@ -98,7 +97,7 @@ class PacketHeaderICMPEcho : public PacketHeader {
 public:
     BufferOffsetType<0, uint16_t> ident;
     BufferOffsetType<2, uint16_t> seq;
-    
+
     PacketHeaderICMPEcho(PacketBufferOffset source_pbo) :
         PacketHeader(source_pbo),
         ident(*this),
@@ -109,9 +108,8 @@ public:
     
     void print(std::ostream &) const;
     
-    inline size_t header_size() const {
-        return 4;
-    }
+    inline size_t header_size() const { return 4; }
+    static size_t minimum_header_size() { return 4; }
 };
 
 #endif /* PacketHeaderICMP_h */

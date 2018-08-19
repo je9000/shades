@@ -151,6 +151,10 @@ public:
         return data_offset_bytes();
     }
     
+    static size_t minimum_header_size() {
+        return TCP_MIN_HEADER_LENGTH_QWORDS * 4;
+    }
+    
     uint16_t calculate_checksum() const;
     
     void update_checksum();
