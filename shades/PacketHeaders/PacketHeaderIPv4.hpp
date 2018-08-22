@@ -70,7 +70,7 @@ public:
         return ia.s_addr;
     }
     
-    static std::string ip_to_str(uint32_t ip_int) {
+    static std::string ip_to_str(const uint32_t ip_int) {
         char r[16] = {0};
         struct in_addr ia;
         ia.s_addr = ip_int;
@@ -114,9 +114,9 @@ namespace std {
 std::ostream &operator<<(std::ostream &, const IPv4Address &);
 
 class IPv4SubnetMask {
-private:
-    uint_fast8_t mask;
 public:
+    uint_fast8_t mask;
+
     IPv4SubnetMask(uint_fast8_t b = 32) { assign(b); }
     inline void operator=(uint_fast8_t b) { assign(b); }
     
@@ -139,6 +139,8 @@ public:
     inline bool operator==(const IPv4SubnetMask &other) {
         return mask == other.mask;
     }
+    
+    std::string as_string() const;
 };
 
 class IPv4AddressAndMask {
@@ -158,6 +160,10 @@ public:
     
     inline bool contains(const IPv4Address &other) {
         return mask.same_network(addr, other);
+    }
+    
+    inline std::string as_string() const {
+        return addr.as_string() + '/' + std::to_string(mask.mask);
     }
 };
 

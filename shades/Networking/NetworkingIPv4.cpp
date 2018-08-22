@@ -123,13 +123,20 @@ bool NetworkingIPv4::possibly_reassemble(PacketHeaderIPv4 &packet) {
 
 void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto, PacketBuffer &pb) {
     size_t data_size = pb.size();
+    
+    routes.get(dest);
+    
     pb.unreserve_space(PacketHeaderTCP::minimum_header_size());
     PacketHeaderIPv4 ipv4(pb);
     
     ipv4.build(networking.my_ip, dest, data_size, proto);
     // TODO: Fragment
     
-    networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb);
+    if (networking.net_driver.is_layer3_interface()) {
+        networking.net_driver.send(pb);
+    } else {
+        networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb);
+    }
 }
 
 bool NetworkingIPv4::icmp_echo_callback(NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4, void *) {

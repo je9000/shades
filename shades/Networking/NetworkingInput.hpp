@@ -11,7 +11,7 @@
 #include "NetDriver.hpp"
 
 class NetworkingInput;
-typedef std::function<bool(NetworkingInput &, PacketHeader & /* First */, PacketHeader & /* Last */, void *)> NetworkingInputCallback;
+typedef std::function<bool(NetworkingInput &, PacketHeader &, void *)> NetworkingInputCallback;
 class NetworkingInputCallbackInfo {
 public:
     NetworkingInputCallback func;
@@ -35,9 +35,10 @@ public:
     void run();
 
     void process_one();
-
-    // TODO: layer 3 only interfaces
     void process_one(PacketBuffer &);
+    
+    bool process_ethernet(PacketBufferOffset);
+    bool process_ipv4(PacketBufferOffset);
 };
 
 #endif /* NetworkingInput_h */

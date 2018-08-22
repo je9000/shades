@@ -15,44 +15,50 @@
 
 #define MAX_SANE_FRAME_SIZE 1024*1024*10
 
+#ifndef RESERVED_HEADER_SPACE
+#define RESERVED_HEADER_SPACE 64
+#endif
+
+static_assert(RESERVED_HEADER_SPACE < MAX_FRAME_SIZE, "RESERVED_HEADER_SPACE >= MAX_FRAME_SIZE");
+static_assert(MAX_FRAME_SIZE <= MAX_SANE_FRAME_SIZE, "MAX_FRAME_SIZE > MAX_SANE_FRAME_SIZE");
+
 class PacketBufferOffset;
 
-enum PacketBufferHeaderType {
-    HEADER_UNKNOWN,
-    HEADER_ETHERNET,
-    HEADER_IPV4,
-    HEADER_IPV6,
-};
-
 class PacketBuffer {
-private:
-    PacketBufferHeaderType header_type = HEADER_UNKNOWN;
 protected:
     friend PacketBufferOffset;
-    size_t reserved_header_space = 64;
+    size_t reserved_header_space = RESERVED_HEADER_SPACE;
 public:
-    PacketBuffer();
+    enum HEADER_TYPE {
+        HEADER_UNKNOWN,
+        HEADER_ETHERNET,
+        HEADER_IPV4,
+        HEADER_IPV6,
+    };
+
+    // This is valid when we receive a packet, but not necessarily when sending.
+    HEADER_TYPE header_type = HEADER_UNKNOWN;
     
+    PacketBuffer();
     PacketBuffer(size_t);
 
     size_t size() const;
     
     unsigned char *data();
-    
     unsigned char &at(size_t n);
 
     unsigned char *reserved_data();
-    
     size_t reserved_size() const;
+    void reset_reserved_space();
     
+    // These are bad names.
     void unreserve_space(size_t);
+    void rereserve_space(size_t);
     
     void set_valid_size(size_t);
     
-    void copy_from(const unsigned char *, size_t, PacketBufferHeaderType);
-    
-    PacketBufferHeaderType get_header_type() const;
-    
+    void copy_from(const unsigned char *, size_t, HEADER_TYPE);
+
     PacketBufferOffset offset(size_t);
 
     std::vector<unsigned char> buffer;

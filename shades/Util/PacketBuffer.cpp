@@ -29,9 +29,19 @@ size_t PacketBuffer::reserved_size() const {
     return reserved_header_space;
 }
 
+void PacketBuffer::reset_reserved_space() {
+    reserved_header_space = RESERVED_HEADER_SPACE;
+}
+
 void PacketBuffer::unreserve_space(size_t amount) {
     if (amount > reserved_header_space) throw std::out_of_range("Not enough reserved space");
     reserved_header_space -= amount;
+}
+
+void PacketBuffer::rereserve_space(size_t amount) {
+    size_t new_reserved_space = reserved_header_space + amount;
+    if (new_reserved_space < reserved_header_space || new_reserved_space >= size()) throw std::out_of_range("Not enough space");
+    reserved_header_space = new_reserved_space;
 }
 
 void PacketBuffer::set_valid_size(size_t len) {
@@ -40,7 +50,7 @@ void PacketBuffer::set_valid_size(size_t len) {
     buffer.resize(real_len);
 }
 
-void PacketBuffer::copy_from(const unsigned char *src, size_t len, PacketBufferHeaderType ht) {
+void PacketBuffer::copy_from(const unsigned char *src, size_t len, HEADER_TYPE ht) {
     if (!src) throw std::runtime_error("Invalid data");
     size_t real_len = len + reserved_header_space;
     if (real_len < len || real_len > MAX_SANE_FRAME_SIZE) throw std::out_of_range("> buffer.max_size");
@@ -48,8 +58,6 @@ void PacketBuffer::copy_from(const unsigned char *src, size_t len, PacketBufferH
     if (len) memcpy(data(), src, len);
     header_type = ht;
 }
-
-PacketBufferHeaderType PacketBuffer::get_header_type() const { return header_type; }
 
 PacketBufferOffset PacketBuffer::offset(size_t o) {
     return PacketBufferOffset(*this, o + reserved_header_space);

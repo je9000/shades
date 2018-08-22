@@ -13,6 +13,8 @@
 #include "PacketHeaderARP.hpp"
 #include "PacketHeader.hpp"
 
+static const std::chrono::seconds ARP_QUERY_TIMEOUT(30); // seconds
+
 // Callbacks
 class NetworkingEthernet;
 typedef std::function<void(NetworkingEthernet &, PacketHeaderEthernet &, void *)> NetworkingEthernetInputCallback;

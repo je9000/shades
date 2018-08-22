@@ -17,61 +17,84 @@ void NetworkingInput::process_one() {
 void NetworkingInput::process_one(PacketBuffer &recv_into) {
     while(!net_driver.recv(recv_into));
     try {
-        PacketHeaderEthernet ether(recv_into);
-        ether.check();
-        for (auto callback : packet_type_callbacks[typeid(PacketHeaderEthernet)]) {
-            if (!callback.func(*this, ether, ether, callback.data)) goto ABORT_PROCESSING;
-        }
-        
-        if (ether.ether_type() == ETHERTYPE::IP) {
-            PacketHeaderIPv4 ipv4(ether.next_header_offset());
-            ipv4.check();
-            for (auto callback : packet_type_callbacks[typeid(PacketHeaderIPv4)]) {
-                if (!callback.func(*this, ether, ipv4, callback.data)) goto ABORT_PROCESSING;
-            }
-            
-            if (ipv4.protocol() == IPPROTO::TCP) {
-                PacketHeaderTCP tcp(ipv4.next_header_offset());
-                tcp.check();
-                for (auto callback : packet_type_callbacks[typeid(PacketHeaderTCP)]) {
-                    if (!callback.func(*this, ether, tcp, callback.data)) goto ABORT_PROCESSING;
-                }
-            } if (ipv4.protocol() == IPPROTO::UDP) {
-                PacketHeaderUDP udp(ipv4.next_header_offset());
-                udp.check();
-                for (auto callback : packet_type_callbacks[typeid(PacketHeaderUDP)]) {
-                    if (!callback.func(*this, ether, udp, callback.data)) goto ABORT_PROCESSING;
-                }
-            } else if (ipv4.protocol() == IPPROTO::ICMP) {
-                PacketHeaderICMP icmp(ipv4.next_header_offset());
-                icmp.check();
-                for (auto callback : packet_type_callbacks[typeid(PacketHeaderICMP)]) {
-                    if (!callback.func(*this, ether, icmp, callback.data)) goto ABORT_PROCESSING;
-                }
+        switch (recv_into.header_type) {
+            case PacketBuffer::HEADER_ETHERNET:
+                process_ethernet(recv_into);
+                break;
                 
-                if (icmp.type() == ICMP::ECHO) {
-                    PacketHeaderICMPEcho echo(icmp.next_header_offset());
-                    echo.check();
-                    for (auto callback : packet_type_callbacks[typeid(PacketHeaderICMPEcho)]) {
-                        if (!callback.func(*this, ether, echo, callback.data)) goto ABORT_PROCESSING;
-                    }
-                }
-            }
-        } else if (ether.ether_type() == ETHERTYPE::ARP) {
-            PacketHeaderARP arp(ether.next_header_offset());
-            arp.check();
-            for (auto callback : packet_type_callbacks[typeid(PacketHeaderARP)]) {
-                if (!callback.func(*this, ether, arp, callback.data)) goto ABORT_PROCESSING;
-            }
+            case PacketBuffer::HEADER_IPV4:
+                process_ipv4(recv_into);
+                break;
+                
+            // TODO ipv6
+                
+            default:
+                break;
         }
-    ABORT_PROCESSING:
-        ;
     } catch (const invalid_packet &e) {
         PacketHeaderUnknown invalid_header(recv_into);
         for (auto callback : packet_type_callbacks[typeid(invalid_packet)]) {
-            if (!callback.func(*this, invalid_header, invalid_header, callback.data)) break;
+            if (!callback.func(*this, invalid_header, callback.data)) break;
         }
     } catch (const std::exception &e) {
         std::cerr << "Dropping packet, callback exception: " << e.what() << "\n";
     }
+}
+
+
+bool NetworkingInput::process_ipv4(PacketBufferOffset ipv4_offset) {
+    PacketHeaderIPv4 ipv4(ipv4_offset);
+    ipv4.check();
+    for (auto callback : packet_type_callbacks[typeid(PacketHeaderIPv4)]) {
+        if (!callback.func(*this, ipv4, callback.data)) return false;
+    }
+    
+    if (ipv4.protocol() == IPPROTO::TCP) {
+        PacketHeaderTCP tcp(ipv4.next_header_offset());
+        tcp.check();
+        for (auto callback : packet_type_callbacks[typeid(PacketHeaderTCP)]) {
+            if (!callback.func(*this, tcp, callback.data)) return false;
+        }
+    } if (ipv4.protocol() == IPPROTO::UDP) {
+        PacketHeaderUDP udp(ipv4.next_header_offset());
+        udp.check();
+        for (auto callback : packet_type_callbacks[typeid(PacketHeaderUDP)]) {
+            if (!callback.func(*this, udp, callback.data)) return false;
+        }
+    } else if (ipv4.protocol() == IPPROTO::ICMP) {
+        PacketHeaderICMP icmp(ipv4.next_header_offset());
+        icmp.check();
+        for (auto callback : packet_type_callbacks[typeid(PacketHeaderICMP)]) {
+            if (!callback.func(*this, icmp, callback.data)) return false;
+        }
+        
+        if (icmp.type() == ICMP::ECHO) {
+            PacketHeaderICMPEcho echo(icmp.next_header_offset());
+            echo.check();
+            for (auto callback : packet_type_callbacks[typeid(PacketHeaderICMPEcho)]) {
+                if (!callback.func(*this, echo, callback.data)) return false;
+            }
+        }
+    }
+    return true;
+}
+
+// return false to abort processing
+bool NetworkingInput::process_ethernet(PacketBufferOffset ether_offset) {
+    PacketHeaderEthernet ether(ether_offset);
+    ether.check();
+    for (auto callback : packet_type_callbacks[typeid(PacketHeaderEthernet)]) {
+        if (!callback.func(*this, ether, callback.data)) return false;;
+    }
+    switch (ether.ether_type()) {
+        case ETHERTYPE::IP:
+            process_ipv4(ether.next_header_offset());
+            break;
+            
+        // case ipv6
+
+        default:
+            break;
+    }
+    return true;
 }

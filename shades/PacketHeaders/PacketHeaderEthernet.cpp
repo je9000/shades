@@ -1,9 +1,18 @@
+#include <sstream>
+
 #include "HexDump.hpp"
 #include "PacketHeaderEthernet.hpp"
 
+std::string EthernetAddress::as_string() const {
+    std::ostringstream oss;
+    
+    oss << HexDump<EthernetAddressActual>(address, ':', 0);
+    return oss.str();
+}
+
 void PacketHeaderEthernet::check() const {
     if (ether_type() <= 1500) throw invalid_packet("Raw IEEE 802.3, 802.2 not supported");
-    if (ether_type() <= 1536 /* && > 1500 */) throw invalid_packet("Invalid ethertype");
+    if (ether_type() < 1536 /* && > 1500 */) throw invalid_packet("Invalid ethertype");
 };
 
 void PacketHeaderEthernet::build(const EthernetAddress &src_eth, const EthernetAddress &dest_eth, const ETHERTYPE::ETHERTYPE type) {

@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <chrono>
+#include <string_view>
 
 #include "NetworkingInput.hpp"
 #include "NetDriver.hpp"
@@ -10,8 +11,6 @@
 #include "PacketQueue.hpp"
 #include "NetworkingIPv4.hpp"
 #include "NetworkingEthernet.hpp"
-
-static const std::chrono::seconds ARP_QUERY_TIMEOUT(30); // seconds
 
 class Networking {
 protected:
@@ -27,19 +26,21 @@ public:
     NetworkingIPv4 ipv4_layer;
     NetworkingEthernet eth_layer;
 
-    Networking(NetDriver &, const IPv4AddressAndMask);
+    Networking(NetDriver &, const IPv4AddressAndMask, const std::string_view = "");
 
     // Implements ethernet promiscuous mode.
-    bool ethernet_callback(NetworkingInput &, PacketHeader &, PacketHeader &, void *);
+    bool ethernet_callback(NetworkingInput &, PacketHeader &, void *);
     
     // IPv4 promiscuous mode check before hading off to the IPv4 layer. Maybe should be handled there?
-    bool ipv4_callback(NetworkingInput &, PacketHeader &, PacketHeader &, void *);
+    bool ipv4_callback(NetworkingInput &, PacketHeader &, void *);
 
     void run();
     
     NetworkingInput &input();
     
-    EthernetAddress get_interface_mac(const std::string_view);
+    EthernetAddress get_interface_addr(const std::string_view);
+    
+    void run_init_command(const std::string_view);
 };
 
 #endif /* Networking_h */

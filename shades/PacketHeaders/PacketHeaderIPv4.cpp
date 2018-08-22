@@ -8,14 +8,20 @@
 #include "HexDump.hpp"
 #include "PacketHeaderIPv4.hpp"
 
+std::string IPv4SubnetMask::as_string() const {
+    if (!mask) return "0.0.0.0";
+    
+    IPv4Address a(htonl(~((1 << (32 - mask)) - 1)));
+    return a.as_string();
+}
+
 IPv4Address IPv4Address::apply_mask_bits(size_t bits) const {
     if (bits == 0) return 0;
     if (bits > 32) throw std::out_of_range("Bits must be <= 32");
     return htonl(ntohl(ip_int) & ~((static_cast<uint64_t>(1) << (32 - bits)) - 1));
 }
 
-std::ostream &operator<<(std::ostream &os, const IPv4Address &ip4)
-{
+std::ostream &operator<<(std::ostream &os, const IPv4Address &ip4) {
     os << ip4.as_string();
     return os;
 }

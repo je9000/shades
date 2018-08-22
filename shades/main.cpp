@@ -1,14 +1,13 @@
 #include <iostream>
+#include <memory>
 
 #include <unistd.h>
 
 #include "NetDriverPCAP.hpp"
-//#include "NetDriverUTun.hpp"
+#include "NetDriverUTun.hpp"
 #include "Networking.hpp"
 #include "PacketHeaders.hpp"
 #include "PacketQueue.hpp"
-
-
 #include "StackTracePrinter.hpp"
 
 void on_terminate() {
@@ -36,9 +35,18 @@ int main(int argc, const char *argv[]) {
     std::set_terminate(on_terminate);
 #endif
     
+    std::unique_ptr<NetDriver> netdriver;
     std::string iface = "en0";
-    std::string my_ip = "192.168.0.254/32";
-    std::string default_route = "192.168.0.1";
+    std::string my_ip = "172.16.0.2/32";
+    std::string default_route = "172.16.0.1";
+    std::string network_init_command = "ifconfig $_IFNAME $_IPV4_ADDRESS $_IPV4_ADDRESS netmask $_IPV4_NETMASK";
+
+#ifdef FORCE_PCAP
+     my_ip = "192.168.0.254/24";
+     default_route = "192.168.0.1";
+     network_init_command = "";
+#endif
+    
     int new_uid = 0, new_gid = 0;
 
     if (argc > 4) {
@@ -49,10 +57,16 @@ int main(int argc, const char *argv[]) {
             std::cerr << "Can't parse new uid:gid\n";
             return 1;
         }
+        netdriver = std::make_unique<NetDriverPCAP>(iface);
+    } else {
+#ifdef FORCE_PCAP
+        netdriver = std::make_unique<NetDriverPCAP>(iface);
+#else
+        netdriver = std::make_unique<NetDriverUTun>("0");
+#endif
     }
 
-    NetDriverPCAP pcap(iface);
-    Networking net(pcap, {my_ip});
+    Networking net(*netdriver.get(), {my_ip}, network_init_command);
     
     if (new_uid || new_gid) {
         if (setgid(new_gid) != 0 || setuid(new_uid) != 0) throw std::runtime_error("Failed to setuid/setgid!");
@@ -61,7 +75,7 @@ int main(int argc, const char *argv[]) {
     //net.input().register_callback(typeid(PacketHeaderICMPEcho), print_icmp);
     net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route));
     
-    std::clog << "net has MAC " << net.my_mac << " and IP " << net.my_ip << "\n";
+    std::clog << "net is on " << netdriver->get_ifname() << ", hwaddr " << net.my_mac << ", IPv4 " << net.my_ip << "\n";
     
     net.run();
 

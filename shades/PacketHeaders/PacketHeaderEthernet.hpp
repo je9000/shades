@@ -71,6 +71,8 @@ public:
         return sizeof(address);
     }
     
+    std::string as_string() const;
+    
     EthernetAddressActual address;
 };
 

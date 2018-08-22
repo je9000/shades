@@ -2,9 +2,9 @@
 
 #include <netinet/in_systm.h>
 #include <ifaddrs.h>
+#include <unistd.h>
 
 #ifdef __linux__
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -12,7 +12,7 @@
 #include <net/if_dl.h>
 #endif
 
-Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_mask) :
+Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_mask, const std::string_view init_command) :
     net_driver(nd),
     net_in(nd),
     promiscuous(false),
@@ -20,30 +20,33 @@ Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_ma
     eth_layer(*this)
 {
     // assign ip? dhcp?
-    my_mac = get_interface_mac(net_driver.get_ifname());
     my_subnet_mask = my_address_and_mask.mask;
     my_ip = my_address_and_mask.addr;
     
-    // These two will never be called if our net_in doesn't capture Ethernet (layer 2)
-    net_in.register_callback(typeid(PacketHeaderEthernet),
-                             [this](NetworkingInput &ni, PacketHeader &p1, PacketHeader &pN, void *d) { return ethernet_callback(ni, p1, pN, d); }
-                             );
+    run_init_command(init_command);
+
+    if (!net_driver.is_layer3_interface()) {
+        my_mac = get_interface_addr(net_driver.get_ifname());
+        net_in.register_callback(typeid(PacketHeaderEthernet),
+                                 [this](NetworkingInput &ni, PacketHeader &ph, void *d) { return ethernet_callback(ni, ph, d); }
+                                 );
+    }
     net_in.register_callback(typeid(PacketHeaderIPv4),
-                             [this](NetworkingInput &ni, PacketHeader &p1, PacketHeader &pN, void *d) { return ipv4_callback(ni, p1, pN, d); }
+                             [this](NetworkingInput &ni, PacketHeader &ph, void *d) { return ipv4_callback(ni, ph, d); }
                              );
 }
 
 // Implements ethernet promiscuous mode.
-bool Networking::ethernet_callback(NetworkingInput &, PacketHeader &p1, PacketHeader &pN, void *) {
-    auto &eth = dynamic_cast<PacketHeaderEthernet &>(pN);
+bool Networking::ethernet_callback(NetworkingInput &, PacketHeader &ph, void *) {
+    auto &eth = dynamic_cast<PacketHeaderEthernet &>(ph);
     if (eth.dest()[0] & ETHERNET_MULTICAST_BIT || eth.dest() == my_mac) return eth_layer.process(eth);
     if (promiscuous) return true;
     return false;
 }
 
 // IPv4 promiscuous mode check before hading off to the IPv4 layer. Maybe should be handled there?
-bool Networking::ipv4_callback(NetworkingInput &, PacketHeader &p1, PacketHeader &pN, void *) {
-    auto &ip = dynamic_cast<PacketHeaderIPv4 &>(pN);
+bool Networking::ipv4_callback(NetworkingInput &, PacketHeader &ph, void *) {
+    auto &ip = dynamic_cast<PacketHeaderIPv4 &>(ph);
     if (ip.dest() == my_ip || ip.dest() == 0xFFFFFFFF) return ipv4_layer.process(ip); // Missing multicast blocks
     if (promiscuous) return true;
     return false;
@@ -66,7 +69,7 @@ NetworkingInput &Networking::input() {
 }
 
 #ifdef SIOCGIFHWADDR
-EthernetAddress Networking::get_interface_mac(const std::string_view ifn) {
+EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
     int fd;
     struct ifreq ifr;
     EthernetAddress ea;
@@ -86,7 +89,7 @@ EthernetAddress Networking::get_interface_mac(const std::string_view ifn) {
     return ea;
 }
 #elif defined(__FreeBSD__) || ( defined(__APPLE__) && defined(__MACH__) )
-EthernetAddress Networking::get_interface_mac(const std::string_view ifn) {
+EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
     struct ifaddrs *ifap;
     EthernetAddress ea;
     
@@ -109,3 +112,25 @@ EthernetAddress Networking::get_interface_mac(const std::string_view ifn) {
 #else
 #error Do not know how to get MAC address on this platform.
 #endif
+
+void Networking::run_init_command(const std::string_view init_command) {
+    if (init_command.empty()) return;
+    
+    pid_t parent_pid = getpid();
+    if (!fork()) {
+        setenv("_PID", std::to_string(parent_pid).data(), 1);
+        setenv("_IFNAME", net_driver.get_ifname().data(), 1);
+        setenv("_IPV4_ADDRESS", my_ip.as_string().data(), 1);
+        setenv("_IPV4_NETMASK", my_subnet_mask.as_string().data(), 1);
+        if (net_driver.is_layer3_interface()) {
+            setenv("_LAYER_3_ONLY", "1", 1);
+        } else {
+            setenv("_LAYER_3_ONLY", "0", 1);
+            setenv("_ETHERNET_ADDRESS", my_mac.as_string().data(), 1);
+        }
+        system(init_command.data());
+        exit(0);
+    } else {
+        wait(nullptr);
+    }
+}
