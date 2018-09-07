@@ -3,6 +3,7 @@
 #include <netinet/in_systm.h>
 #include <ifaddrs.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #ifdef __linux__
 #include <sys/socket.h>
@@ -13,8 +14,8 @@
 #endif
 
 Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_mask, const std::string_view init_command) :
-    net_driver(nd),
     net_in(nd),
+    net_driver(nd),
     promiscuous(false),
     ipv4_layer(*this),
     eth_layer(*this)

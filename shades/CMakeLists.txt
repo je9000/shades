@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.10)
+project(shades)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "-O2 -g -Wall")
+include_directories(NetDriver Networking PacketHeaders Util)
+file(GLOB SOURCES "Networking/*.cpp" "PacketHeaders/*.cpp" "Util/*.cpp")
+
+if (APPLE)
+    list(APPEND SOURCES "NetDriver/NetDriverUTun.cpp")
+    add_definitions(-DHAVE_UTUN)
+endif()
+
+find_library(PCAP_LIB pcap)
+if (PCAP_LIB)
+    list(APPEND SOURCES "NetDriver/NetDriverPCAP.cpp")
+    add_definitions(-DHAVE_PCAP)
+endif()
+
+list(APPEND SOURCES "main.cpp")
+add_executable(shades ${SOURCES})
+if (PCAP_LIB)
+    target_link_libraries(shades pcap)
+endif()

@@ -4,7 +4,11 @@
 #include <unistd.h>
 
 #include "NetDriverPCAP.hpp"
+
+#ifdef __APPLE__
 #include "NetDriverUTun.hpp"
+#endif
+
 #include "Networking.hpp"
 #include "PacketHeaders.hpp"
 #include "PacketQueue.hpp"
@@ -57,9 +61,10 @@ int main(int argc, const char *argv[]) {
             std::cerr << "Can't parse new uid:gid\n";
             return 1;
         }
+        network_init_command = "";
         netdriver = std::make_unique<NetDriverPCAP>(iface);
     } else {
-#ifdef FORCE_PCAP
+#if defined(FORCE_PCAP) || !defined(__APPLE__)
         netdriver = std::make_unique<NetDriverPCAP>(iface);
 #else
         netdriver = std::make_unique<NetDriverUTun>("0");
