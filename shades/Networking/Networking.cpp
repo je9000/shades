@@ -15,8 +15,8 @@
 
 Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_mask, const std::string_view init_command) :
     net_in(nd),
-    net_driver(nd),
     promiscuous(false),
+    net_driver(nd),
     ipv4_layer(*this),
     eth_layer(*this)
 {
