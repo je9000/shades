@@ -7,7 +7,10 @@
 class NetDriver {
 protected:
     std::string ifname;
+    
+    uint32_t get_mtu();
 public:
+    uint32_t mtu;
     enum ADDRTYPE {
         ETHERNET,
         IPV4,

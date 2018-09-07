@@ -78,9 +78,9 @@ int main(int argc, const char *argv[]) {
     }
     
     //net.input().register_callback(typeid(PacketHeaderICMPEcho), print_icmp);
-    net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route));
+    net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route), netdriver->mtu);
     
-    std::clog << "net is on " << netdriver->get_ifname() << ", hwaddr " << net.my_mac << ", IPv4 " << net.my_ip << "\n";
+    std::clog << "net is on " << netdriver->get_ifname() << ", hwaddr " << net.my_mac << ", IPv4 " << net.my_ip << ", MTU " << netdriver->mtu << "\n";
     
     net.run();
 

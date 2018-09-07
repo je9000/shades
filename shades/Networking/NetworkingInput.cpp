@@ -13,7 +13,6 @@ void NetworkingInput::process_one() {
     process_one(last_received);
 }
 
-// TODO: layer 3 only interfaces
 void NetworkingInput::process_one(PacketBuffer &recv_into) {
     while(!net_driver.recv(recv_into)) {};
 #ifndef DEBUG_NETWORKING_INPUT

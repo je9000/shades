@@ -56,14 +56,11 @@ void PacketBuffer::set_valid_size(size_t len) {
 }
 
 void PacketBuffer::copy_from(const unsigned char *src, size_t len, HEADER_TYPE ht) {
-    if (!src) throw std::runtime_error("Invalid data");
-    if (!len) throw std::runtime_error("Invalid buffer size");
+    if (!src || !len) throw std::runtime_error("Invalid arguments");
+    reset_reserved_space();
     size_t real_len = len + reserved_header_space;
     if (real_len < len || real_len > MAX_SANE_FRAME_SIZE) throw std::out_of_range("> MAX_SANE_FRAME_SIZE");
-    if (real_len < buffer.size()) {
-        reset_reserved_space();
-        buffer.resize(len + reserved_header_space);
-    }
+    buffer.resize(len + reserved_header_space);
     memcpy(data(), src, len);
     header_type = ht;
 }

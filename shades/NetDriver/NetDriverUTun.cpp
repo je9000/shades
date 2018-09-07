@@ -1,4 +1,4 @@
-#include <exception>
+#include <stdexcept>
 
 #include <sys/socket.h>
 #include <sys/sys_domain.h>
@@ -16,6 +16,7 @@
 NetDriverUTun::NetDriverUTun(const std::string_view id) : NetDriver(id) {
     if (std::sscanf(id.data(), "%d", &utun_id) != 1) throw std::runtime_error("Invalid utun number");
     utun_fd = create_utun(utun_id);
+    mtu = get_mtu();
 }
 
 NetDriverUTun::~NetDriverUTun() {

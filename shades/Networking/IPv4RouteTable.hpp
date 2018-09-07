@@ -11,8 +11,8 @@
 class IPv4RouteInfo {
 public:
     IPv4Address next_hop;
-    size_t mtu;
-    IPv4RouteInfo(const IPv4Address &nh) : next_hop(nh), mtu(1500) {}
+    uint32_t mtu;
+    IPv4RouteInfo(const IPv4Address &nh, const uint32_t m = 0) : next_hop(nh), mtu(m) {}
     inline operator bool() const {
         return next_hop;
     }
@@ -38,17 +38,17 @@ public:
         throw std::runtime_error("No route to host");
     }
 
-    inline void set(const IPv4Address &dest, size_t mask_bits, const IPv4Address &gw) {
+    inline void set(const IPv4Address &dest, size_t mask_bits, const IPv4Address &gw, uint32_t mtu) {
         if (mask_bits > 32) throw std::out_of_range("Mask bits must be <= 32");
         if (!gw) throw std::runtime_error("Invalid gateway");
         if (mask_bits == 0) {
-            default_route = gw;
+            default_route = {gw, mtu};
             return;
         }
         auto masked_dest = dest.apply_mask_bits(mask_bits);
         auto &table = routes_per_mask[mask_bits - 1];
         if (table.find(masked_dest) != table.end()) table.erase(masked_dest);
-        table.insert({masked_dest, gw});
+        table.insert({masked_dest, {gw, mtu}});
     }
     
     inline void remove(const IPv4Address &dest, size_t mask_bits) {

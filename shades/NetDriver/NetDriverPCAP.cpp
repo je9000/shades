@@ -33,6 +33,8 @@ NetDriverPCAP::NetDriverPCAP(const std::string_view ifn) : NetDriver(ifn) {
         default:
             throw std::runtime_error("Unsupported pcap_datalink type");
     }
+    
+    mtu = get_mtu();
 }
 
 NetDriverPCAP::~NetDriverPCAP() {

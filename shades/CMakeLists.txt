@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "-O2 -g -Wall")
 include_directories(NetDriver Networking PacketHeaders Util)
 file(GLOB SOURCES "Networking/*.cpp" "PacketHeaders/*.cpp" "Util/*.cpp")
+list(APPEND SOURCES "NetDriver/NetDriver.cpp")
 
 if (APPLE)
     list(APPEND SOURCES "NetDriver/NetDriverUTun.cpp")
