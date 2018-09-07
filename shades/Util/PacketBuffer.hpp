@@ -49,12 +49,12 @@ public:
     unsigned char &at(size_t n);
 
     unsigned char *reserved_data();
-    size_t reserved_size() const;
+    size_t get_reserved_space() const;
     void reset_reserved_space();
     
     // These are bad names.
-    void unreserve_space(size_t);
-    void rereserve_space(size_t);
+    void take_reserved_space(size_t);
+    void put_reserved_space(size_t);
 
     void set_valid_size(size_t);
     

@@ -89,11 +89,10 @@ void NetDriverUTun::send(PacketBuffer &pb, size_t len) {
             throw std::runtime_error("Unsupported packet type");
     }
     
-    pb.unreserve_space(HEADER_SIZE);
+    pb.take_reserved_space(HEADER_SIZE);
     send_len += HEADER_SIZE;
     memcpy(pb.data(), &ip_version, HEADER_SIZE);
     ssize_t r = write(utun_fd, pb.data(), send_len);
-    pb.rereserve_space(HEADER_SIZE); // Put the buffer back as we found it in case the caller wants it that way.
     if (r != send_len) throw std::runtime_error("Unable to send all data");
 }
 
@@ -101,14 +100,14 @@ bool NetDriverUTun::recv(PacketBuffer &pb) {
     uint32_t ip_version;
     pb.reset_size();
     pb.reset_reserved_space();
-    pb.unreserve_space(HEADER_SIZE);
+    pb.take_reserved_space(HEADER_SIZE);
 RETRY:
     ssize_t r = read(utun_fd, pb.data(), pb.size());
     if (r < 0 && (errno == EINTR || errno == EAGAIN)) goto RETRY;
     if (r <= 0 || r <= HEADER_SIZE) throw std::runtime_error("Unable to read all data");
     memcpy(&ip_version, pb.data(), HEADER_SIZE);
 
-    pb.rereserve_space(HEADER_SIZE);
+    pb.put_reserved_space(HEADER_SIZE);
     pb.set_valid_size(r - HEADER_SIZE);
     
     switch (ntohl(ip_version)) {

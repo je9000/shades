@@ -71,13 +71,12 @@ void NetDriverPCAP::send(PacketBuffer &pb, size_t len) {
                 throw std::runtime_error("Unsupported packet type");;
         }
         unreserved_change = sizeof(ip_version);
-        pb.unreserve_space(sizeof(ip_version));
+        pb.take_reserved_space(sizeof(ip_version));
         send_len += sizeof(ip_version);
         if (datalink_header == DLT_LOOP) ip_version = htonl(ip_version);
         memcpy(pb.data(), &ip_version, sizeof(ip_version));
     }
     auto r = pcap_inject(pcap, pb.data(), send_len);
-    if (unreserved_change) pb.rereserve_space(unreserved_change); // Put the buffer back as we found it in case the caller wants it that way.
     if (r != send_len) throw std::runtime_error("Unable to send all data");
 }
 

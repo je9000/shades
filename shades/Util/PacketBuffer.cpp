@@ -30,7 +30,7 @@ unsigned char *PacketBuffer::reserved_data() {
     return buffer.data();
 }
 
-size_t PacketBuffer::reserved_size() const {
+size_t PacketBuffer::get_reserved_space() const {
     return reserved_header_space;
 }
 
@@ -38,12 +38,12 @@ void PacketBuffer::reset_reserved_space() {
     reserved_header_space = RESERVED_HEADER_SPACE;
 }
 
-void PacketBuffer::unreserve_space(size_t amount) {
+void PacketBuffer::take_reserved_space(size_t amount) {
     if (amount > reserved_header_space) throw std::out_of_range("Not enough reserved space");
     reserved_header_space -= amount;
 }
 
-void PacketBuffer::rereserve_space(size_t amount) {
+void PacketBuffer::put_reserved_space(size_t amount) {
     size_t new_reserved_space = reserved_header_space + amount;
     if (new_reserved_space < reserved_header_space || new_reserved_space >= buffer.size()) throw std::out_of_range("Not enough space");
     reserved_header_space = new_reserved_space;
@@ -70,7 +70,7 @@ PacketBufferOffset PacketBuffer::offset(size_t o) {
 }
 
 std::ostream& operator<<(std::ostream &os, const PacketBuffer &pb) {
-    os << "PacketBuffer (" << pb.size() << " bytes, +" << pb.reserved_size() << " reserved):\n";
+    os << "PacketBuffer (" << pb.size() << " bytes, +" << pb.get_reserved_space() << " reserved):\n";
     os << HexDump<decltype(pb.buffer)>(pb.buffer) << '\n';
     return os;
 }

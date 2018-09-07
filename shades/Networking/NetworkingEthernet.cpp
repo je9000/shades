@@ -146,10 +146,12 @@ void NetworkingEthernet::send(const IPv4Address &dest, IPv4RouteTable &routes, c
 }
 
 void NetworkingEthernet::send(const EthernetAddress &dest, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb, size_t len) {
-    pb.unreserve_space(PacketHeaderEthernet::minimum_header_size());
+    size_t send_len = len;
+    pb.take_reserved_space(PacketHeaderEthernet::minimum_header_size());
     PacketHeaderEthernet eth(pb);
     
     eth.build(networking.my_mac, dest, type);
     
-    networking.net_driver.send(pb, len);
+    if (send_len) send_len += PacketHeaderEthernet::minimum_header_size();
+    networking.net_driver.send(pb, send_len);
 }

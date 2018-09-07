@@ -128,17 +128,17 @@ void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto,
     size_t ip_header_size = PacketHeaderTCP::minimum_header_size();
     routes.get(dest);
     
-    pb.unreserve_space(ip_header_size);
+    pb.take_reserved_space(ip_header_size);
     
     auto dest_info = routes.get(dest);
-    auto target_mtu = dest_info.mtu - ip_header_size;
-    if (data_size > target_mtu) {
+    auto target_data_mtu = dest_info.mtu - ip_header_size;
+    if (data_size > target_data_mtu) {
         auto next_id = ip_id_counter.get_next_id();
         size_t data_sent = 0;
         bool last_iteration = false;
         
         while (data_sent < data_size) {
-            size_t this_data_size = (target_mtu / 8) * 8; // Nearest multiple of 8.
+            size_t this_data_size = (target_data_mtu / 8) * 8; // Nearest multiple of 8.
             if (data_sent + this_data_size > data_size) {
                 this_data_size = data_size - data_sent;
                 last_iteration = true;
@@ -151,12 +151,19 @@ void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto,
             ipv4.update_checksum();
             data_sent += this_data_size;
 
+            auto pre_send_reserved = pb.get_reserved_space();
             if (networking.net_driver.is_layer3_interface()) {
                 networking.net_driver.send(pb, this_data_size + ip_header_size);
             } else {
                 networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb, this_data_size + ip_header_size);
             }
-            if (!last_iteration) pb.rereserve_space(this_data_size);
+            /*
+             * The net driver or ethernet layer might alter the amount of reserved space. Generally the
+             * packet buffer isn't used after sending so they don't reset their reservations. Since we
+             * do re-use the buffer, we reset it here.
+             */
+            if (pb.get_reserved_space() != pre_send_reserved) pb.put_reserved_space(pre_send_reserved - pb.get_reserved_space());
+            if (!last_iteration) pb.put_reserved_space(this_data_size);
         }
     } else {
         PacketHeaderIPv4 ipv4(pb);
