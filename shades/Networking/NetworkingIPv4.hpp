@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdexcept>
 #include <typeindex>
+#include <random>
 
 #include "IPv4RouteTable.hpp"
 #include "PacketHeaderIPv4.hpp"
@@ -81,6 +82,29 @@ public:
     }
 };
 
+class IPv4IPIDCounter {
+private:
+    uint16_t last_assigned_id;
+public:
+    IPv4IPIDCounter() {
+        std::random_device rd;
+        std::mt19937 mt(rd());
+        std::uniform_int_distribution<> dis(0, 0xFFFF);
+        last_assigned_id = dis(mt);
+        if (last_assigned_id == reserved_id()) last_assigned_id++;
+    }
+    
+    inline uint16_t get_next_id() {
+        last_assigned_id++;
+        if (last_assigned_id == reserved_id()) last_assigned_id++;
+        return last_assigned_id;
+    }
+    
+    static uint16_t reserved_id() {
+        return PacketHeaderIPv4::UNFRAGMENTED_ID;
+    }
+};
+
 class IPv4FlowData {
 public:
 };
@@ -121,6 +145,7 @@ class Networking;
 class NetworkingIPv4 {
 private:
     Networking &networking;
+    IPv4IPIDCounter ip_id_counter;
     std::unordered_map<const NetworkFlowIPv4, IPv4FlowData> flows;
     std::unordered_map<uint16_t, IPv4FlowPendingReassembly> pending_reassembly;
     std::unordered_map<std::type_index, std::vector<const NetworkingIPv4InputCallbackInfo>> ipv4_callbacks;
@@ -131,6 +156,7 @@ private:
     } stats;
 public:
     IPv4RouteTable routes;
+    uint16_t last_used_ipid;
     
     NetworkingIPv4(Networking &);
     

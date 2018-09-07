@@ -42,6 +42,7 @@ public:
     PacketBuffer();
     PacketBuffer(size_t);
 
+    void reset_size(size_t = MAX_FRAME_SIZE);
     size_t size() const;
     
     unsigned char *data();
@@ -54,7 +55,7 @@ public:
     // These are bad names.
     void unreserve_space(size_t);
     void rereserve_space(size_t);
-    
+
     void set_valid_size(size_t);
     
     void copy_from(const unsigned char *, size_t, HEADER_TYPE);

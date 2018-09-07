@@ -3,6 +3,7 @@
 #include "PacketHeaders.hpp"
 
 bool NetworkingEthernet::process(PacketHeaderEthernet &packet) {
+    packet.check();
     return process_next_header(packet);
 }
 
@@ -132,23 +133,23 @@ EthernetAddress NetworkingEthernet::arp_resolve(const IPv4Address &ip) {
     throw std::runtime_error("ARP query timeout");
 }
 
-void NetworkingEthernet::send(const IPv4Address &dest, IPv4RouteTable &routes, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb) {
+void NetworkingEthernet::send(const IPv4Address &dest, IPv4RouteTable &routes, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb, size_t len) {
     EthernetAddress dest_mac;
     if (networking.my_subnet_mask.same_network(networking.my_ip, dest)) {
         dest_mac = arp_resolve(dest);
     } else {
-        auto router_ip = routes.get(dest);
-        dest_mac = arp_resolve(router_ip);
+        auto route = routes.get(dest);
+        dest_mac = arp_resolve(route.next_hop);
     }
     
-    send(dest_mac, type, pb);
+    send(dest_mac, type, pb, len);
 }
 
-void NetworkingEthernet::send(const EthernetAddress &dest, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb) {
+void NetworkingEthernet::send(const EthernetAddress &dest, const ETHERTYPE::ETHERTYPE type, PacketBuffer &pb, size_t len) {
     pb.unreserve_space(PacketHeaderEthernet::minimum_header_size());
     PacketHeaderEthernet eth(pb);
     
     eth.build(networking.my_mac, dest, type);
     
-    networking.net_driver.send(pb);
+    networking.net_driver.send(pb, len);
 }

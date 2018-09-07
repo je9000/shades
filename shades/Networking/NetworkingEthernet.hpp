@@ -43,8 +43,8 @@ public:
     
     void register_callback(const std::type_info &, const NetworkingEthernetInputCallback &, void * = nullptr);
     
-    void send(const IPv4Address &, IPv4RouteTable &, const ETHERTYPE::ETHERTYPE, PacketBuffer &);
-    void send(const EthernetAddress &, const ETHERTYPE::ETHERTYPE, PacketBuffer &);
+    void send(const IPv4Address &, IPv4RouteTable &, const ETHERTYPE::ETHERTYPE, PacketBuffer &, size_t = 0);
+    void send(const EthernetAddress &, const ETHERTYPE::ETHERTYPE, PacketBuffer &, size_t = 0);
     
     EthernetAddress arp_resolve(const IPv4Address &);
     void arp_callback(PacketHeaderEthernet &);

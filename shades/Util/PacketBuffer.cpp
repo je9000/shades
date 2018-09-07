@@ -2,10 +2,15 @@
 #include "HexDump.hpp"
 
 PacketBuffer::PacketBuffer() {
-    buffer.resize(MAX_FRAME_SIZE + reserved_header_space);
+    reset_size();
 }
 
 PacketBuffer::PacketBuffer(size_t x) {
+    reset_size(x);
+}
+
+void PacketBuffer::reset_size(size_t x) {
+    if (x + reserved_header_space < buffer.size()) reset_reserved_space();
     buffer.resize(x + reserved_header_space);
 }
 
@@ -40,7 +45,7 @@ void PacketBuffer::unreserve_space(size_t amount) {
 
 void PacketBuffer::rereserve_space(size_t amount) {
     size_t new_reserved_space = reserved_header_space + amount;
-    if (new_reserved_space < reserved_header_space || new_reserved_space >= size()) throw std::out_of_range("Not enough space");
+    if (new_reserved_space < reserved_header_space || new_reserved_space >= buffer.size()) throw std::out_of_range("Not enough space");
     reserved_header_space = new_reserved_space;
 }
 
@@ -52,10 +57,14 @@ void PacketBuffer::set_valid_size(size_t len) {
 
 void PacketBuffer::copy_from(const unsigned char *src, size_t len, HEADER_TYPE ht) {
     if (!src) throw std::runtime_error("Invalid data");
+    if (!len) throw std::runtime_error("Invalid buffer size");
     size_t real_len = len + reserved_header_space;
-    if (real_len < len || real_len > MAX_SANE_FRAME_SIZE) throw std::out_of_range("> buffer.max_size");
-    buffer.resize(real_len);
-    if (len) memcpy(data(), src, len);
+    if (real_len < len || real_len > MAX_SANE_FRAME_SIZE) throw std::out_of_range("> MAX_SANE_FRAME_SIZE");
+    if (real_len < buffer.size()) {
+        reset_reserved_space();
+        buffer.resize(len + reserved_header_space);
+    }
+    memcpy(data(), src, len);
     header_type = ht;
 }
 
@@ -73,7 +82,8 @@ std::ostream& operator<<(std::ostream &os, const PacketBuffer &pb) {
 void PacketBufferOffset::adjust_offset() const {
     ssize_t diff = original_reserved_header_space - pb.reserved_header_space;
     if (diff == 0) return;
-    if (offset + diff > pb.size()) throw std::out_of_range("reserved size changed too much");
+    if (static_cast<ssize_t>(offset) + diff < 0) throw std::out_of_range("reserved size size change puts this into reserved space");
+    if (offset + diff > pb.buffer.size()) throw std::out_of_range("reserved size changed too much");
     original_reserved_header_space = pb.reserved_header_space;
     offset += diff;
 }

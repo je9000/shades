@@ -16,7 +16,7 @@ public:
     NetDriver(const std::string_view ifn) : ifname(ifn) {}
     NetDriver(const NetDriver &) = delete;
     virtual ~NetDriver() {}
-    virtual void send(PacketBuffer &) = 0;
+    virtual void send(PacketBuffer &, size_t = 0) = 0;
     virtual bool recv(PacketBuffer &) = 0; // Return true if we received data, false if it's just a timeout.
     virtual bool is_layer3_interface() = 0;
     

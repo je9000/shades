@@ -189,6 +189,8 @@ public:
 
 class PacketHeaderIPv4 : public PacketHeader {
 public:
+    const static int UNFRAGMENTED_ID = 0x4a45;
+    
     BufferOffsetType<0, uint8_t> vihl;
     BufferOffsetType<1, uint8_t> dscp_ecn;
     BufferOffsetType<2, uint16_t> size;

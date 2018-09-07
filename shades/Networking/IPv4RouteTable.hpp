@@ -13,21 +13,25 @@ public:
     IPv4Address next_hop;
     size_t mtu;
     IPv4RouteInfo(const IPv4Address &nh) : next_hop(nh), mtu(1500) {}
+    inline operator bool() const {
+        return next_hop;
+    }
 };
 
 typedef std::unordered_map<IPv4Address, IPv4RouteInfo> IPv4RouteTableActual;
 
 class IPv4RouteTable {
 private:
-    IPv4Address default_route;
+    IPv4RouteInfo default_route;
     std::array<IPv4RouteTableActual, 32> routes_per_mask; // we don't store mask of /0
 public:
-    inline const IPv4Address get(const IPv4Address &dest) {
+    IPv4RouteTable() : default_route(0) {}
+    inline const IPv4RouteInfo get(const IPv4Address &dest) {
         for(size_t i = 32; i > 0; i--) {
             auto masked_dest = dest.apply_mask_bits(i);
             auto found = routes_per_mask[i - 1].find(masked_dest);
             if (found != routes_per_mask[i - 1].end()) {
-                return found->second.next_hop;
+                return found->second;
             }
         };
         if (default_route) return default_route;
@@ -50,13 +54,12 @@ public:
     inline void remove(const IPv4Address &dest, size_t mask_bits) {
         if (mask_bits > 32) throw std::out_of_range("Mask bits must be <= 32");
         if (mask_bits == 0) {
-            default_route.ip_int = 0;
+            default_route.next_hop.ip_int = 0;
         } else {
             auto masked_dest = dest.apply_mask_bits(mask_bits);
             routes_per_mask[mask_bits - 1].erase(masked_dest);
         }
     }
-    
 };
 
 #endif /* IPv4RouteTable_h */

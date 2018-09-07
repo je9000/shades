@@ -18,7 +18,7 @@ private:
 public:
     NetDriverPCAP(const std::string_view);
     ~NetDriverPCAP();
-    void send(PacketBuffer &);
+    void send(PacketBuffer &, size_t = 0);
     bool recv(PacketBuffer &);
     inline size_t header_size() { return pcap_header_size; }
     bool is_layer3_interface();

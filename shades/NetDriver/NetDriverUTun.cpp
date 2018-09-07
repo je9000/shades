@@ -65,7 +65,15 @@ int NetDriverUTun::create_utun(int devno) {
     return r;
 }
 
-void NetDriverUTun::send(PacketBuffer &pb) {
+void NetDriverUTun::send(PacketBuffer &pb, size_t len) {
+    size_t send_len;
+    if (len) {
+        if (len > pb.size()) throw std::out_of_range("len > pb.size()");
+        send_len = len;
+    } else {
+        send_len = pb.size();
+    }
+    
     // The first 4 bits of a layer 3 header are the IP version. And utun only supports IP!
     uint32_t ip_version = pb.data()[0] >> 4;
     
@@ -81,13 +89,16 @@ void NetDriverUTun::send(PacketBuffer &pb) {
     }
     
     pb.unreserve_space(HEADER_SIZE);
+    send_len += HEADER_SIZE;
     memcpy(pb.data(), &ip_version, HEADER_SIZE);
-    ssize_t r = write(utun_fd, pb.data(), pb.size());
-    if (r != pb.size()) throw std::runtime_error("Unable to send all data");
+    ssize_t r = write(utun_fd, pb.data(), send_len);
+    pb.rereserve_space(HEADER_SIZE); // Put the buffer back as we found it in case the caller wants it that way.
+    if (r != send_len) throw std::runtime_error("Unable to send all data");
 }
 
 bool NetDriverUTun::recv(PacketBuffer &pb) {
     uint32_t ip_version;
+    pb.reset_size();
     pb.reset_reserved_space();
     pb.unreserve_space(HEADER_SIZE);
 RETRY:

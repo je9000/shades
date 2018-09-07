@@ -89,6 +89,7 @@ bool NetworkingIPv4::process_next_header(PacketHeaderIPv4 &packet) {
 
 bool NetworkingIPv4::process(PacketHeaderIPv4 &packet) {
     if (packet.checksum() % 2) clean(); // We should clean periodically, but we can optimize later.
+    packet.check();
     if (IPv4FlowPendingReassembly::needs_reassembly(packet)) {
         return possibly_reassemble(packet);
     }
@@ -121,21 +122,51 @@ bool NetworkingIPv4::possibly_reassemble(PacketHeaderIPv4 &packet) {
     return true;
 }
 
+// May modify pb.
 void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto, PacketBuffer &pb) {
     size_t data_size = pb.size();
-    
+    size_t ip_header_size = PacketHeaderTCP::minimum_header_size();
     routes.get(dest);
     
-    pb.unreserve_space(PacketHeaderTCP::minimum_header_size());
-    PacketHeaderIPv4 ipv4(pb);
+    pb.unreserve_space(ip_header_size);
     
-    ipv4.build(networking.my_ip, dest, data_size, proto);
-    // TODO: Fragment
-    
-    if (networking.net_driver.is_layer3_interface()) {
-        networking.net_driver.send(pb);
+    auto dest_info = routes.get(dest);
+    auto target_mtu = dest_info.mtu - ip_header_size;
+    if (data_size > target_mtu) {
+        auto next_id = ip_id_counter.get_next_id();
+        size_t data_sent = 0;
+        bool last_iteration = false;
+        
+        while (data_sent < data_size) {
+            size_t this_data_size = (target_mtu / 8) * 8; // Nearest multiple of 8.
+            if (data_sent + this_data_size > data_size) {
+                this_data_size = data_size - data_sent;
+                last_iteration = true;
+            }
+            PacketHeaderIPv4 ipv4(pb);
+            ipv4.build(networking.my_ip, dest, this_data_size, proto); // offset grows giant, doubled? it offsets in pb and then adds it again
+            ipv4.frag_offset(data_sent / 8);
+            ipv4.ipid = next_id;
+            if (!last_iteration) ipv4.flag_mf(true);
+            ipv4.update_checksum();
+            data_sent += this_data_size;
+
+            if (networking.net_driver.is_layer3_interface()) {
+                networking.net_driver.send(pb, this_data_size + ip_header_size);
+            } else {
+                networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb, this_data_size + ip_header_size);
+            }
+            if (!last_iteration) pb.rereserve_space(this_data_size);
+        }
     } else {
-        networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb);
+        PacketHeaderIPv4 ipv4(pb);
+        ipv4.build(networking.my_ip, dest, data_size, proto);
+        
+        if (networking.net_driver.is_layer3_interface()) {
+            networking.net_driver.send(pb);
+        } else {
+            networking.eth_layer.send(dest, routes, ETHERTYPE::IP, pb);
+        }
     }
 }
 

@@ -44,7 +44,16 @@ bool NetDriverPCAP::is_layer3_interface() {
     return true;
 }
 
-void NetDriverPCAP::send(PacketBuffer &pb) {
+void NetDriverPCAP::send(PacketBuffer &pb, size_t len) {
+    size_t send_len;
+    size_t unreserved_change = 0;
+    if (len) {
+        if (len > pb.size()) throw std::out_of_range("len > pb.size()");
+        send_len = len;
+    } else {
+        send_len = pb.size();
+    }
+    
     if (datalink_header == DLT_LOOP || datalink_header == DLT_NULL) {
         uint32_t ip_version;
         switch (guess_raw_header_type(pb.data())) {
@@ -59,12 +68,15 @@ void NetDriverPCAP::send(PacketBuffer &pb) {
             default:
                 throw std::runtime_error("Unsupported packet type");;
         }
+        unreserved_change = sizeof(ip_version);
         pb.unreserve_space(sizeof(ip_version));
+        send_len += sizeof(ip_version);
         if (datalink_header == DLT_LOOP) ip_version = htonl(ip_version);
         memcpy(pb.data(), &ip_version, sizeof(ip_version));
     }
-    auto r = pcap_inject(pcap, pb.data(), pb.size());
-    if (r != pb.size()) throw std::runtime_error("Unable to send all data");
+    auto r = pcap_inject(pcap, pb.data(), send_len);
+    if (unreserved_change) pb.rereserve_space(unreserved_change); // Put the buffer back as we found it in case the caller wants it that way.
+    if (r != send_len) throw std::runtime_error("Unable to send all data");
 }
 
 PacketBuffer::HEADER_TYPE NetDriverPCAP::guess_loop_header_type(const u_char *data) {
