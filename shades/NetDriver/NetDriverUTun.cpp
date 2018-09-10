@@ -62,6 +62,7 @@ int NetDriverUTun::create_utun(int devno) {
     }
     
     ifname = std::string(new_if_name, new_if_name_len);
+    setup_socket_ready(utun_fd);
 
     return r;
 }
@@ -98,11 +99,15 @@ void NetDriverUTun::send(PacketBuffer &pb, size_t len) {
 
 bool NetDriverUTun::recv(PacketBuffer &pb) {
     uint32_t ip_version;
+    ssize_t r;
+    
+    if (!socket_ready(1)) return false;
+    
     pb.reset_size();
     pb.reset_reserved_space();
     pb.take_reserved_space(HEADER_SIZE);
 RETRY:
-    ssize_t r = read(utun_fd, pb.data(), pb.size());
+    r = read(utun_fd, pb.data(), pb.size());
     if (r < 0 && (errno == EINTR || errno == EAGAIN)) goto RETRY;
     if (r <= 0 || r <= HEADER_SIZE) throw std::runtime_error("Unable to read all data");
     memcpy(&ip_version, pb.data(), HEADER_SIZE);

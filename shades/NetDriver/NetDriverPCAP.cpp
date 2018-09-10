@@ -11,8 +11,7 @@ NetDriverPCAP::NetDriverPCAP(const std::string_view ifn) : NetDriver(ifn) {
     if (pcap == NULL) {
         throw std::runtime_error(std::string("Could not open interface: ") + error_buffer);
     }
-    //pcap_setdirection(pcap, PCAP_D_IN); // Doesn't really matter if it fails.
-    
+
     // See: https://www.tcpdump.org/linktypes.html
     datalink_header = pcap_datalink(pcap);
     switch (datalink_header) {
@@ -35,6 +34,10 @@ NetDriverPCAP::NetDriverPCAP(const std::string_view ifn) : NetDriver(ifn) {
     }
     
     mtu = get_mtu();
+    
+    int fd = pcap_get_selectable_fd(pcap);  // Should be closed automatically with pcap_close)
+    if (!fd) throw std::runtime_error("pcap_get_selectable_fd");
+    setup_socket_ready(fd);
 }
 
 NetDriverPCAP::~NetDriverPCAP() {
@@ -115,7 +118,10 @@ PacketBuffer::HEADER_TYPE NetDriverPCAP::guess_raw_header_type(const u_char *dat
 bool NetDriverPCAP::recv(PacketBuffer &pb) {
     struct pcap_pkthdr *header;
     u_char *data;
-    auto r = pcap_next_ex(pcap, &header, const_cast<const u_char **>(&data));
+
+    if (!socket_ready(1)) return false;
+    
+    int r = pcap_next_ex(pcap, &header, const_cast<const u_char **>(&data));
     if (r == 0) return false; // Timeout
     if (r < 0 || header->caplen == 0) throw std::runtime_error("Read error");
     if (header->caplen > header->len) throw std::runtime_error("PCAP buffer too small");
