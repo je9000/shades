@@ -45,7 +45,6 @@ int main(int argc, const char *argv[]) {
     std::string default_route = "172.16.0.1";
     std::string network_init_command = "ifconfig $_IFNAME $_IPV4_ADDRESS $_IPV4_ADDRESS netmask $_IPV4_NETMASK";
 
-#define FORCE_PCAP
 #ifdef FORCE_PCAP
      my_ip = "192.168.0.254/24";
      default_route = "192.168.0.1";

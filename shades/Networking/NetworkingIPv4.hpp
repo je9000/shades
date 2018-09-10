@@ -14,16 +14,18 @@
 #include "PacketHeaderIPv4.hpp"
 #include "PacketHeader.hpp"
 
-using steady_clock = std::chrono::steady_clock;
-using steady_clock_time = std::chrono::time_point<steady_clock>;
+using NetworkingIPv4SteadyClock = std::chrono::steady_clock;
+using NetworkingIPv4SteadyClockTime = std::chrono::time_point<NetworkingIPv4SteadyClock>;
 
 class NetworkFlowIPv4 {
 public:
-    IPv4Address source_ip;
-    IPv4Address dest_ip;
-    
-    inline bool operator==(const NetworkFlowIPv4 &other) {
-        return source_ip == other.source_ip && dest_ip == other.dest_ip;
+    IPv4Address source, dest;
+    uint16_t ipid;
+    uint8_t proto;
+    NetworkFlowIPv4(IPv4Address s, IPv4Address d, uint16_t id, uint8_t p) : source(s), dest(d), ipid(id), proto(p) {}
+
+    inline bool operator==(const NetworkFlowIPv4 &other) const {
+        return source == other.source && dest == other.dest && ipid == other.ipid && proto == other.proto;
     }
 };
 
@@ -32,9 +34,9 @@ namespace std {
     struct hash<const NetworkFlowIPv4> {
         std::size_t operator()(const NetworkFlowIPv4 &nfu) const {
             if (sizeof(std::size_t) >= 8) {
-                return (static_cast<std::size_t>(nfu.source_ip.ip_int) << 32) | nfu.dest_ip.ip_int;
+                return (static_cast<std::size_t>(nfu.source.ip_int) << 32) | (nfu.dest.ip_int ^ nfu.proto ^ nfu.ipid);
             } else {
-                return nfu.source_ip.ip_int ^ nfu.dest_ip.ip_int;
+                return (nfu.source.ip_int ^ nfu.dest.ip_int) | (nfu.dest.ip_int ^ nfu.proto ^ nfu.ipid);
             }
         }
     };
@@ -105,10 +107,6 @@ public:
     }
 };
 
-class IPv4FlowData {
-public:
-};
-
 // Set insures order and uniqueness, meaning we will drop any duplicate IP packets with the same offset.
 // That's probably what we want.
 typedef std::set<IPv4PacketPendingReassembly> IPv4FlowPacketsPendingReassembly;
@@ -119,17 +117,19 @@ private:
 public:
     uint16_t ipid;
     bool have_first, have_last;
-    steady_clock_time expires;
+    NetworkingIPv4SteadyClockTime expires;
     IPv4FlowPacketsPendingReassembly packets;
     
     IPv4FlowPendingReassembly(PacketHeaderIPv4 &packet) :
         ipid(packet.ipid()),
         have_first(false),
         have_last(false),
-        expires(steady_clock::now() + IPV4_REASSEMBLY_TIMEOUT)
+        expires(NetworkingIPv4SteadyClock::now() + IPV4_REASSEMBLY_TIMEOUT)
     {
         add_packet(packet);
     }
+    
+    IPv4FlowPendingReassembly(const IPv4FlowPendingReassembly &) = delete;
     
     void add_packet(PacketHeaderIPv4 &);
     
@@ -146,21 +146,23 @@ class NetworkingIPv4 {
 private:
     Networking &networking;
     IPv4IPIDCounter ip_id_counter;
-    std::unordered_map<const NetworkFlowIPv4, IPv4FlowData> flows;
-    std::unordered_map<uint16_t, IPv4FlowPendingReassembly> pending_reassembly;
+    std::unordered_map<const NetworkFlowIPv4, IPv4FlowPendingReassembly> pending_reassembly;
     std::unordered_map<std::type_index, std::vector<const NetworkingIPv4InputCallbackInfo>> ipv4_callbacks;
     struct {
         size_t expired_fragmented = 0;
         size_t over_frag_limit = 0;
         size_t unknown_protocols = 0;
     } stats;
+    
+
+    bool icmp_echo_callback(NetworkingIPv4 &, PacketHeaderIPv4 &, void *);
+    void timer_callback(NetworkingIPv4SteadyClockTime, void *);
 public:
     IPv4RouteTable routes;
-    uint16_t last_used_ipid;
     
     NetworkingIPv4(Networking &);
     
-    void clean();
+    void clean(NetworkingIPv4SteadyClockTime);
     
     void register_callback(const std::type_info &, const NetworkingIPv4InputCallback &, void * = nullptr);
     
@@ -171,8 +173,6 @@ public:
     bool possibly_reassemble(PacketHeaderIPv4 &);
     
     void send(const IPv4Address &, const IPPROTO::IPPROTO, PacketBuffer &);
-    
-    bool icmp_echo_callback(NetworkingIPv4 &, PacketHeaderIPv4 &, void *);
 };
 
 #endif /* NetworkingIPv4_hpp */

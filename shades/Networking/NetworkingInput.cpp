@@ -4,17 +4,22 @@ void NetworkingInput::register_callback(const std::type_info &packet_type, const
     packet_type_callbacks[packet_type].push_back({callback, data});
 }
 
-void NetworkingInput::run() {
-    keep_running = true;
-    while(keep_running) process_one();
+void NetworkingInput::register_timer_callback(const NetworkingTimerCallback &callback, void *data) {
+    timer_callbacks.push_back({callback, data});
 }
 
-void NetworkingInput::process_one() {
-    process_one(last_received);
+void NetworkingInput::run() {
+    PacketBuffer recv_into;
+    keep_running = true;
+    while(keep_running) process_one(recv_into);
 }
 
 void NetworkingInput::process_one(PacketBuffer &recv_into) {
-    while(!net_driver.recv(recv_into)) {};
+    while(true) {
+        if (net_driver.recv(recv_into)) break;
+        auto now = NetworkingInputSteadyClock::now();
+        for (auto callback : timer_callbacks) callback.func(*this, now, callback.data);
+    }
 #ifndef DEBUG_NETWORKING_INPUT
     try {
 #endif

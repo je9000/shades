@@ -54,18 +54,19 @@ bool Networking::ipv4_callback(NetworkingInput &, PacketHeader &ph, void *) {
 }
 
 void Networking::run() {
+    PacketBuffer recv_into;
     net_in.keep_running = true;
     while(net_in.keep_running) {
         if (auto *buf = packet_queue.get_readable()) {
             net_in.process_one(*buf);
             packet_queue.put_writable(buf); // We're done with it.
         } else {
-            net_in.process_one();
+            net_in.process_one(recv_into);
         }
     }
 }
 
-NetworkingInput &Networking::input() {
+NetworkingInput &Networking::get_input() {
     return net_in;
 }
 

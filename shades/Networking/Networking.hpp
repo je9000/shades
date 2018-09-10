@@ -36,7 +36,7 @@ public:
 
     void run();
     
-    NetworkingInput &input();
+    NetworkingInput &get_input();
     
     EthernetAddress get_interface_addr(const std::string_view);
     

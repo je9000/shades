@@ -15,7 +15,7 @@ void IPv4FlowPendingReassembly::add_packet(PacketHeaderIPv4 &packet) {
 }
 
 std::unique_ptr<PacketBuffer> IPv4FlowPendingReassembly::try_reassemble() {
-    if (steady_clock::now() >= expires) throw ipv4_reassembly_timeout();
+    if (NetworkingIPv4SteadyClock::now() >= expires) throw ipv4_reassembly_timeout();
     if (!have_last || !have_first) return nullptr;
     
     size_t expected_next_offset = 0;
@@ -45,12 +45,22 @@ NetworkingIPv4::NetworkingIPv4(Networking &n) : networking(n) {
     register_callback(typeid(PacketHeaderICMP),
                       [this](NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4, void *d) { return icmp_echo_callback(nv4, ipv4, d); }
                      );
+    networking.get_input().register_timer_callback(
+        [this](NetworkingInput &, NetworkingInputSteadyClockTime now, void *d) {
+            timer_callback(now, d);
+        }
+    );
 }
 
-void NetworkingIPv4::clean() {
-    auto now = steady_clock::now();
+
+void NetworkingIPv4::timer_callback(NetworkingIPv4SteadyClockTime now, void *) {
+    clean(now);
+}
+
+void NetworkingIPv4::clean(NetworkingIPv4SteadyClockTime now) {
     for (auto it = pending_reassembly.begin(); it != pending_reassembly.end(); ++it) {
         if (now >= it->second.expires) {
+            // TODO: Send an ICMP reassembly time exceeded?
             pending_reassembly.erase(it);
             stats.expired_fragmented++;
         }
@@ -88,7 +98,6 @@ bool NetworkingIPv4::process_next_header(PacketHeaderIPv4 &packet) {
 }
 
 bool NetworkingIPv4::process(PacketHeaderIPv4 &packet) {
-    if (packet.checksum() % 2) clean(); // We should clean periodically, but we can optimize later.
     packet.check();
     if (IPv4FlowPendingReassembly::needs_reassembly(packet)) {
         return possibly_reassemble(packet);
@@ -97,13 +106,14 @@ bool NetworkingIPv4::process(PacketHeaderIPv4 &packet) {
 }
 
 bool NetworkingIPv4::possibly_reassemble(PacketHeaderIPv4 &packet) {
-    auto pending = pending_reassembly.find(packet.ipid());
+    auto pending = pending_reassembly.find({packet.source(), packet.dest(), packet.ipid(), packet.protocol()});
     if (pending == pending_reassembly.end()) {
         if (pending_reassembly.size() >= IPV4_REASSEMBLY_MAX_PENDING) {
             stats.over_frag_limit++;
             return true;
         }
-        pending_reassembly.insert({packet.ipid(), packet});
+        NetworkFlowIPv4 flow(packet.source(), packet.dest(), packet.ipid(), packet.protocol());
+        pending_reassembly.emplace(flow, packet);
         // If it needs reassembly and we only have one packet, don't bother trying to reassemble.
         return true;
     }
