@@ -42,18 +42,20 @@ std::unique_ptr<PacketBuffer> IPv4FlowPendingReassembly::try_reassemble() {
 
 //NetworkingIPv4
 NetworkingIPv4::NetworkingIPv4(Networking &n) : networking(n) {
-    register_callback(typeid(PacketHeaderICMP),
-                      [this](NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4, void *d) { return icmp_echo_callback(nv4, ipv4, d); }
-                     );
+    register_callback(
+        typeid(PacketHeaderICMP),
+        [this](size_t, void *d, NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4) { return icmp_echo_callback(nv4, ipv4, d); }
+    );
+    
     networking.get_input().register_timer_callback(
-        [this](NetworkingInput &, NetworkingInputSteadyClockTime now, void *d) {
-            timer_callback(now, d);
+        [this](size_t, void *d, NetworkingInput &, NetworkingInputSteadyClockTime now) {
+            timer_callback(now);
         }
     );
 }
 
 
-void NetworkingIPv4::timer_callback(NetworkingIPv4SteadyClockTime now, void *) {
+void NetworkingIPv4::timer_callback(NetworkingIPv4SteadyClockTime now) {
     clean(now);
 }
 
@@ -67,12 +69,16 @@ void NetworkingIPv4::clean(NetworkingIPv4SteadyClockTime now) {
     }
 }
 
-void NetworkingIPv4::register_callback(const std::type_info &packet_type, const NetworkingIPv4InputCallback &callback, void *data) {
-    ipv4_callbacks[packet_type].push_back({callback, data});
+size_t NetworkingIPv4::register_callback(const std::type_info &packet_type, const NetworkingIPv4InputCallback &callback, void *data) {
+    return ipv4_callbacks[packet_type].add(callback, data);
+}
+
+void NetworkingIPv4::unregister_callback(const std::type_info &packet_type, const size_t id) {
+    ipv4_callbacks[packet_type].remove(id);
 }
 
 bool NetworkingIPv4::process_next_header(PacketHeaderIPv4 &packet) {
-    decltype(ipv4_callbacks)::const_iterator callbacks;
+    decltype(ipv4_callbacks)::iterator callbacks;
     switch (packet.protocol()) {
         case IPPROTO::TCP:
             callbacks = ipv4_callbacks.find(typeid(PacketHeaderTCP));
@@ -91,9 +97,7 @@ bool NetworkingIPv4::process_next_header(PacketHeaderIPv4 &packet) {
             return true;
     }
     if (callbacks == ipv4_callbacks.end()) return true;
-    for (auto &cb : callbacks->second) {
-        cb.func(*this, packet, cb.data);
-    }
+    callbacks->second.call_all(*this, packet);
     return true;
 }
 

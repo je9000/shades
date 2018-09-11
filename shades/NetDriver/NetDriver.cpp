@@ -47,7 +47,7 @@ bool NetDriver::socket_ready(int timeout_seconds) {
 #ifdef NETDRIVER_KQUEUE
 RETRY_KQUEUE:
     kq_timeout.tv_sec = timeout_seconds;
-    kq_timeout.tv_sec = 0;
+    kq_timeout.tv_nsec = 0;
     r = kevent(kq, kq_chlist, sizeof(kq_chlist) / sizeof(kq_chlist[0]), kq_evlist, sizeof(kq_evlist) / sizeof(kq_evlist[0]), &kq_timeout);
     if (r < 0 && (errno == EINTR || errno == EAGAIN)) goto RETRY_KQUEUE;
     if (r < 0) throw std::system_error(errno, std::generic_category(), "kevent");

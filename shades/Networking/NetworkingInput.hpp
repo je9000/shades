@@ -8,46 +8,38 @@
 #include <functional>
 #include <chrono>
 
+#include "CallbackVector.hpp"
 #include "PacketHeaders.hpp"
 #include "NetDriver.hpp"
 
 class NetworkingInput;
-typedef std::function<bool(NetworkingInput &, PacketHeader &, void *)> NetworkingInputCallback;
-class NetworkingInputCallbackInfo {
-public:
-    NetworkingInputCallback func;
-    void *data;
-    NetworkingInputCallbackInfo(NetworkingInputCallback f, void *d) : func(f), data(d) {}
-};
+typedef std::function<bool(size_t, void *, NetworkingInput &, PacketHeader &)> NetworkingInputCallback;
 
 using NetworkingInputSteadyClock = std::chrono::steady_clock;
 using NetworkingInputSteadyClockTime = std::chrono::time_point<NetworkingInputSteadyClock>;
-typedef std::function<void(NetworkingInput &, NetworkingInputSteadyClockTime, void *)> NetworkingTimerCallback;
-class NetworkingTimerCallbackInfo {
-public:
-    NetworkingTimerCallback func;
-    void *data;
-    NetworkingTimerCallbackInfo(NetworkingTimerCallback f, void *d) : func(f), data(d) {}
-};
+typedef std::function<void(size_t, void *, NetworkingInput &, NetworkingInputSteadyClockTime)> NetworkingTimerCallback;
 
 class NetworkingInput {
 private:
     NetDriver &net_driver;
+    NetworkingInputSteadyClockTime last_packet_time;
     
-    std::unordered_map<std::type_index, std::vector<const NetworkingInputCallbackInfo>> packet_type_callbacks;
-    std::vector<const NetworkingTimerCallbackInfo> timer_callbacks;
+    std::unordered_map<std::type_index, CallbackVector<NetworkingInputCallback, NetworkingInput &, PacketHeader &>> packet_type_callbacks;
+    CallbackVector<NetworkingTimerCallback, NetworkingInput &, NetworkingInputSteadyClockTime> timer_callbacks;
 public:
     bool keep_running;
 
-    NetworkingInput(NetDriver &nd) : net_driver(nd), keep_running(false) {}
-    
-    void register_callback(const std::type_info &, const NetworkingInputCallback &, void *data = nullptr);
-    void register_timer_callback(const NetworkingTimerCallback &, void *data = nullptr);
-    
+    NetworkingInput(NetDriver &nd) : net_driver(nd), last_packet_time(NetworkingInputSteadyClock::now()), keep_running(false) {}
+
+    size_t register_callback(const std::type_info &, const NetworkingInputCallback &, void *data = nullptr);
+    void unregister_callback(const std::type_info &, const size_t);
+    size_t register_timer_callback(const NetworkingTimerCallback &, void *data = nullptr);
+    void unregister_timer_callback(const size_t);
+
     void run();
 
     void process_one(PacketBuffer &);
-    
+
     bool process_ethernet(PacketBufferOffset);
     bool process_ipv4(PacketBufferOffset);
 };

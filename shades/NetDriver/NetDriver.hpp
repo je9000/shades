@@ -38,13 +38,9 @@ protected:
     void setup_socket_ready(int);
     
 #ifdef NETDRIVER_KQUEUE
-    /*
-     * For some reason only kqueue sees events on the utun socket on osx.
-     * Additionally, kqueue doesn't work unless there are at least 2 events
-     * passed in. This seems buggy.
-     */
-    struct kevent kq_chlist[2];
-    struct kevent kq_evlist[2];
+    // For some reason only kqueue sees events on the utun socket on OSX.
+    struct kevent kq_chlist[1];
+    struct kevent kq_evlist[1];
     struct timespec kq_timeout;
     int kq;
 #endif
@@ -64,7 +60,7 @@ public:
     NetDriver(const NetDriver &) = delete;
     virtual ~NetDriver() {}
     virtual void send(PacketBuffer &, size_t = 0) = 0;
-    virtual bool recv(PacketBuffer &) = 0; // Return true if we received data, false if it's just a timeout.
+    virtual bool recv(PacketBuffer &, int) = 0; // Return true if we received data, false if it's just a timeout.
     virtual bool is_layer3_interface() = 0;
     
     const std::string &get_ifname() { return ifname; }

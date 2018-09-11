@@ -10,6 +10,7 @@
 #include <typeindex>
 #include <random>
 
+#include "CallbackVector.hpp"
 #include "IPv4RouteTable.hpp"
 #include "PacketHeaderIPv4.hpp"
 #include "PacketHeader.hpp"
@@ -44,16 +45,6 @@ namespace std {
 
 static const std::chrono::seconds IPV4_REASSEMBLY_TIMEOUT(30);
 static const int IPV4_REASSEMBLY_MAX_PENDING = 100;
-
-// Callbacks
-class NetworkingIPv4;
-typedef std::function<void(NetworkingIPv4 &, PacketHeaderIPv4 &, void *)> NetworkingIPv4InputCallback;
-class NetworkingIPv4InputCallbackInfo {
-public:
-    NetworkingIPv4InputCallback func;
-    void *data;
-    NetworkingIPv4InputCallbackInfo(NetworkingIPv4InputCallback f, void *d) : func(f), data(d) {}
-};
 
 class ipv4_reassembly_timeout : std::runtime_error {
 public:
@@ -141,22 +132,24 @@ public:
     std::unique_ptr<PacketBuffer> try_reassemble();
 };
 
+class NetworkingIPv4;
+typedef std::function<void(size_t, void *, NetworkingIPv4 &, PacketHeaderIPv4 &)> NetworkingIPv4InputCallback;
+
 class Networking;
 class NetworkingIPv4 {
 private:
     Networking &networking;
     IPv4IPIDCounter ip_id_counter;
     std::unordered_map<const NetworkFlowIPv4, IPv4FlowPendingReassembly> pending_reassembly;
-    std::unordered_map<std::type_index, std::vector<const NetworkingIPv4InputCallbackInfo>> ipv4_callbacks;
+    std::unordered_map<std::type_index, CallbackVector<NetworkingIPv4InputCallback, NetworkingIPv4 &, PacketHeaderIPv4 &>> ipv4_callbacks;
     struct {
         size_t expired_fragmented = 0;
         size_t over_frag_limit = 0;
         size_t unknown_protocols = 0;
     } stats;
-    
 
     bool icmp_echo_callback(NetworkingIPv4 &, PacketHeaderIPv4 &, void *);
-    void timer_callback(NetworkingIPv4SteadyClockTime, void *);
+    void timer_callback(NetworkingIPv4SteadyClockTime);
 public:
     IPv4RouteTable routes;
     
@@ -164,7 +157,8 @@ public:
     
     void clean(NetworkingIPv4SteadyClockTime);
     
-    void register_callback(const std::type_info &, const NetworkingIPv4InputCallback &, void * = nullptr);
+    size_t register_callback(const std::type_info &, const NetworkingIPv4InputCallback &, void * = nullptr);
+    void unregister_callback(const std::type_info &, const size_t);
     
     bool process_next_header(PacketHeaderIPv4 &);
     

@@ -115,11 +115,11 @@ PacketBuffer::HEADER_TYPE NetDriverPCAP::guess_raw_header_type(const u_char *dat
     }
 }
 
-bool NetDriverPCAP::recv(PacketBuffer &pb) {
+bool NetDriverPCAP::recv(PacketBuffer &pb, int timeout) {
     struct pcap_pkthdr *header;
     u_char *data;
 
-    if (!socket_ready(1)) return false;
+    if (!socket_ready(timeout)) return false;
     
     int r = pcap_next_ex(pcap, &header, const_cast<const u_char **>(&data));
     if (r == 0) return false; // Timeout

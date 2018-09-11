@@ -29,11 +29,11 @@ Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_ma
     if (!net_driver.is_layer3_interface()) {
         my_mac = get_interface_addr(net_driver.get_ifname());
         net_in.register_callback(typeid(PacketHeaderEthernet),
-                                 [this](NetworkingInput &ni, PacketHeader &ph, void *d) { return ethernet_callback(ni, ph, d); }
+                                 [this](size_t, void *d, NetworkingInput &ni, PacketHeader &ph) { return ethernet_callback(ni, ph, d); }
                                  );
     }
     net_in.register_callback(typeid(PacketHeaderIPv4),
-                             [this](NetworkingInput &ni, PacketHeader &ph, void *d) { return ipv4_callback(ni, ph, d); }
+                             [this](size_t, void *d, NetworkingInput &ni, PacketHeader &ph) { return ipv4_callback(ni, ph, d); }
                              );
 }
 
@@ -90,7 +90,7 @@ EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
     memcpy(ea.data(), ifr.ifr_hwaddr.sa_data, ea.size());
     return ea;
 }
-#elif defined(__FreeBSD__) || ( defined(__APPLE__) && defined(__MACH__) )
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
 EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
     struct ifaddrs *ifap;
     EthernetAddress ea;

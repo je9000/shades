@@ -16,7 +16,7 @@ public:
     ~NetDriverUTun();
     
     void send(PacketBuffer &, size_t = 0);
-    bool recv(PacketBuffer &);
+    bool recv(PacketBuffer &, int);
     
     int create_utun(int);
     

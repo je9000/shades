@@ -7,8 +7,12 @@ bool NetworkingEthernet::process(PacketHeaderEthernet &packet) {
     return process_next_header(packet);
 }
 
-void NetworkingEthernet::register_callback(const std::type_info &packet_type, const NetworkingEthernetInputCallback &callback, void *data) {
-    ethernet_callbacks[packet_type].push_back({callback, data});
+size_t NetworkingEthernet::register_callback(const std::type_info &packet_type, const NetworkingEthernetInputCallback &callback, void *data) {
+    return ethernet_callbacks[packet_type].add(callback, data);
+}
+
+void NetworkingEthernet::unregister_callback(const std::type_info &packet_type, const size_t id) {
+    ethernet_callbacks[packet_type].remove(id);
 }
 
 bool NetworkingEthernet::process_next_header(PacketHeaderEthernet &packet) {
@@ -32,7 +36,7 @@ bool NetworkingEthernet::process_next_header(PacketHeaderEthernet &packet) {
             return true;
     }
     if (callbacks == ethernet_callbacks.end()) return true;
-    for (auto &cb : callbacks->second) {
+    for (auto &cb : callbacks->second.callbacks) {
         cb.func(*this, packet, cb.data);
     }
     return true;
@@ -104,7 +108,8 @@ EthernetAddress NetworkingEthernet::arp_resolve(const IPv4Address &ip) {
             }
             auto *writable = networking.packet_queue.get_writable();
             if (!writable) throw std::bad_alloc();
-            networking.net_driver.recv(*writable); // recv directly so we don't trigger callbacks.
+            // recv directly so we don't trigger callbacks. Unfortunately this means we also don't trigger timers! TODO
+            while(!networking.net_driver.recv(*writable, 1));
             
             try {
                 PacketHeaderEthernet ether(*writable);

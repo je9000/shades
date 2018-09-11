@@ -26,7 +26,7 @@ NetDriverUTun::~NetDriverUTun() {
 int NetDriverUTun::create_utun(int devno) {
     struct ctl_info ctl;
     __attribute__((__may_alias__)) struct sockaddr_ctl sa_sc;
-    int r;
+    int new_socket;
     char new_if_name[IFNAMSIZ + 1];
     socklen_t new_if_name_len = IFNAMSIZ;
 
@@ -37,11 +37,11 @@ int NetDriverUTun::create_utun(int devno) {
         throw std::overflow_error("snprintf() ctl_info");
     }
 
-    r = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
-    if (r < 0) std::system_error(errno, std::generic_category(), "socket");
+    new_socket = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
+    if (new_socket < 0) std::system_error(errno, std::generic_category(), "socket");
 
-    if (ioctl(r, CTLIOCGINFO, &ctl) == -1) {
-        close(r);
+    if (ioctl(new_socket, CTLIOCGINFO, &ctl) == -1) {
+        close(new_socket);
         throw std::system_error(errno, std::generic_category(), "ioctl");
     }
 
@@ -51,20 +51,20 @@ int NetDriverUTun::create_utun(int devno) {
     sa_sc.ss_sysaddr = AF_SYS_CONTROL;
     sa_sc.sc_unit = devno;
 
-    if (connect(r, reinterpret_cast<struct sockaddr *>(&sa_sc), sizeof(sa_sc)) < 0) {
-        close(r);
+    if (connect(new_socket, reinterpret_cast<struct sockaddr *>(&sa_sc), sizeof(sa_sc)) < 0) {
+        close(new_socket);
         throw std::system_error(errno, std::generic_category(), "connect");
     }
 
-    if (getsockopt(r, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, static_cast<char *>(new_if_name), &new_if_name_len) < 0) {
-        close(r);
+    if (getsockopt(new_socket, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, static_cast<char *>(new_if_name), &new_if_name_len) < 0) {
+        close(new_socket);
         throw std::system_error(errno, std::generic_category(), "getsockopt");
     }
     
     ifname = std::string(new_if_name, new_if_name_len);
-    setup_socket_ready(utun_fd);
+    setup_socket_ready(new_socket);
 
-    return r;
+    return new_socket;
 }
 
 void NetDriverUTun::send(PacketBuffer &pb, size_t len) {
@@ -97,11 +97,11 @@ void NetDriverUTun::send(PacketBuffer &pb, size_t len) {
     if (r != send_len) throw std::runtime_error("Unable to send all data");
 }
 
-bool NetDriverUTun::recv(PacketBuffer &pb) {
+bool NetDriverUTun::recv(PacketBuffer &pb, int timeout) {
     uint32_t ip_version;
     ssize_t r;
     
-    if (!socket_ready(1)) return false;
+    if (!socket_ready(timeout)) return false;
     
     pb.reset_size();
     pb.reset_reserved_space();

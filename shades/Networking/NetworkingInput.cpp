@@ -1,11 +1,19 @@
 #include "NetworkingInput.hpp"
 
-void NetworkingInput::register_callback(const std::type_info &packet_type, const NetworkingInputCallback &callback, void *data) {
-    packet_type_callbacks[packet_type].push_back({callback, data});
+size_t NetworkingInput::register_callback(const std::type_info &packet_type, const NetworkingInputCallback &callback, void *data) {
+    return packet_type_callbacks[packet_type].add(callback, data);
 }
 
-void NetworkingInput::register_timer_callback(const NetworkingTimerCallback &callback, void *data) {
-    timer_callbacks.push_back({callback, data});
+void NetworkingInput::unregister_callback(const std::type_info &packet_type, const size_t id) {
+    packet_type_callbacks[packet_type].remove(id);
+}
+
+size_t NetworkingInput::register_timer_callback(const NetworkingTimerCallback &callback, void *data) {
+    return timer_callbacks.add(callback, data);
+}
+
+void NetworkingInput::unregister_timer_callback(const size_t id) {
+    timer_callbacks.remove(id);
 }
 
 void NetworkingInput::run() {
@@ -15,10 +23,14 @@ void NetworkingInput::run() {
 }
 
 void NetworkingInput::process_one(PacketBuffer &recv_into) {
+    const std::chrono::seconds read_timeout(1);
     while(true) {
-        if (net_driver.recv(recv_into)) break;
+        auto r = net_driver.recv(recv_into, read_timeout.count());
         auto now = NetworkingInputSteadyClock::now();
-        for (auto callback : timer_callbacks) callback.func(*this, now, callback.data);
+        if (now >= last_packet_time + read_timeout) { // 1 second intervals. Why not.
+            timer_callbacks.call_all(*this, now);
+        }
+        if (r) break;
     }
 #ifndef DEBUG_NETWORKING_INPUT
     try {
@@ -40,9 +52,7 @@ void NetworkingInput::process_one(PacketBuffer &recv_into) {
 #ifndef DEBUG_NETWORKING_INPUT
     } catch (const invalid_packet &e) {
         PacketHeaderUnknown invalid_header(recv_into);
-        for (auto callback : packet_type_callbacks[typeid(invalid_packet)]) {
-            if (!callback.func(*this, invalid_header, callback.data)) break;
-        }
+        if (packet_type_callbacks.count(typeid(invalid_packet))) packet_type_callbacks[typeid(invalid_packet)].call_all(*this, invalid_header);
     } catch (const std::exception &e) {
         std::cerr << "Dropping packet, callback exception: " << e.what() << "\n";
     }
@@ -52,32 +62,17 @@ void NetworkingInput::process_one(PacketBuffer &recv_into) {
 
 bool NetworkingInput::process_ipv4(PacketBufferOffset ipv4_offset) {
     PacketHeaderIPv4 ipv4(ipv4_offset);
-    for (auto callback : packet_type_callbacks[typeid(PacketHeaderIPv4)]) {
-        if (!callback.func(*this, ipv4, callback.data)) return false;
-    }
-    
+    if (packet_type_callbacks.count(typeid(PacketHeaderIPv4))) packet_type_callbacks[typeid(PacketHeaderIPv4)].call_until_false(*this, ipv4);
+
     if (ipv4.protocol() == IPPROTO::TCP) {
         PacketHeaderTCP tcp(ipv4.next_header_offset());
-        for (auto callback : packet_type_callbacks[typeid(PacketHeaderTCP)]) {
-            if (!callback.func(*this, tcp, callback.data)) return false;
-        }
-    } if (ipv4.protocol() == IPPROTO::UDP) {
+        if (packet_type_callbacks.count(typeid(PacketHeaderTCP))) packet_type_callbacks[typeid(PacketHeaderTCP)].call_until_false(*this, tcp);
+    } else if (ipv4.protocol() == IPPROTO::UDP) {
         PacketHeaderUDP udp(ipv4.next_header_offset());
-        for (auto callback : packet_type_callbacks[typeid(PacketHeaderUDP)]) {
-            if (!callback.func(*this, udp, callback.data)) return false;
-        }
+        if (packet_type_callbacks.count(typeid(PacketHeaderUDP))) packet_type_callbacks[typeid(PacketHeaderUDP)].call_until_false(*this, udp);
     } else if (ipv4.protocol() == IPPROTO::ICMP) {
         PacketHeaderICMP icmp(ipv4.next_header_offset());
-        for (auto callback : packet_type_callbacks[typeid(PacketHeaderICMP)]) {
-            if (!callback.func(*this, icmp, callback.data)) return false;
-        }
-        
-        if (icmp.type() == ICMP::ECHO) {
-            PacketHeaderICMPEcho echo(icmp.next_header_offset());
-            for (auto callback : packet_type_callbacks[typeid(PacketHeaderICMPEcho)]) {
-                if (!callback.func(*this, echo, callback.data)) return false;
-            }
-        }
+        if (packet_type_callbacks.count(typeid(PacketHeaderICMP))) packet_type_callbacks[typeid(PacketHeaderICMP)].call_until_false(*this, icmp);
     }
     return true;
 }
@@ -85,9 +80,8 @@ bool NetworkingInput::process_ipv4(PacketBufferOffset ipv4_offset) {
 // return false to abort processing
 bool NetworkingInput::process_ethernet(PacketBufferOffset ether_offset) {
     PacketHeaderEthernet ether(ether_offset);
-    for (auto callback : packet_type_callbacks[typeid(PacketHeaderEthernet)]) {
-        if (!callback.func(*this, ether, callback.data)) return false;;
-    }
+    if (packet_type_callbacks.count(typeid(PacketHeaderEthernet))) packet_type_callbacks[typeid(PacketHeaderEthernet)].call_until_false(*this, ether);
+
     switch (ether.ether_type()) {
         case ETHERTYPE::IP:
             process_ipv4(ether.next_header_offset());
