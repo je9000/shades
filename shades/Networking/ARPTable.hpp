@@ -7,9 +7,17 @@
 #include "PacketHeaderEthernet.hpp"
 #include "PacketHeaderIPv4.hpp"
 
+// Arbitrary values.
 static const std::chrono::seconds DEFAULT_ARP_CACHE_TIME(600);
+static const size_t ARP_TABLE_MAX_ENTRIES = 2000;
+
 using ARPTableSteadyClock = std::chrono::steady_clock;
 using ARPTableSteadyClockTime = std::chrono::time_point<ARPTableSteadyClock>;
+
+class arp_entry_not_found : std::runtime_error {
+public:
+    arp_entry_not_found() : std::runtime_error("ARP entry not found") {}
+};
 
 struct ARPTableEntry {
 public:
@@ -28,14 +36,13 @@ private:
     std::unordered_map<IPv4Address, ARPTableEntry> table;
 public:
     const EthernetAddress at(const IPv4Address &ip) {
-        ARPTableEntry found = table.at(ip);
-        if (found.expires.time_since_epoch().count()) {
-            if (ARPTableSteadyClock::now() > found.expires) {
-                table.erase(ip);
-                throw std::out_of_range("arp entry not found");
-            }
+        auto found = table.find(ip);
+        if (found == table.end()) throw arp_entry_not_found();
+        if (found->second.expires.time_since_epoch().count() && ARPTableSteadyClock::now() >= found->second.expires) {
+            table.erase(ip);
+            throw arp_entry_not_found();
         }
-        return found.hwaddr;
+        return found->second.hwaddr;
     }
     
     void insert_or_assign(const IPv4Address &ip, const EthernetAddress &eth) {
@@ -44,6 +51,7 @@ public:
     
     void insert_or_assign(const IPv4Address &ip, const EthernetAddress &eth, std::chrono::seconds duration) {
         ARPTableSteadyClockTime expire_time;
+        if (table.size() >= ARP_TABLE_MAX_ENTRIES) throw std::out_of_range("No room in ARP table");
         if (duration.count()) {
             expire_time = ARPTableSteadyClock::now() + duration;
         }
@@ -52,7 +60,18 @@ public:
         table.insert({ip, entry});
     }
     
-    //TODO remove? max size limit? clean on a timer?
+    void clean() {
+        auto now = ARPTableSteadyClock::now();
+        for(auto it = table.begin(); it != table.end(); ) {
+            if (it->second.expires.time_since_epoch().count() && now >= it->second.expires) {
+                it = table.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+    
+    //TODO remove?
 };
 
 

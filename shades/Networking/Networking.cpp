@@ -29,16 +29,16 @@ Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_ma
     if (!net_driver.is_layer3_interface()) {
         my_mac = get_interface_addr(net_driver.get_ifname());
         net_in.register_callback(typeid(PacketHeaderEthernet),
-                                 [this](size_t, void *d, NetworkingInput &ni, PacketHeader &ph) { return ethernet_callback(ni, ph, d); }
+                                 [this](size_t, void *d, NetworkingInput &, PacketHeader &ph) { return ethernet_callback(ph); }
                                  );
     }
     net_in.register_callback(typeid(PacketHeaderIPv4),
-                             [this](size_t, void *d, NetworkingInput &ni, PacketHeader &ph) { return ipv4_callback(ni, ph, d); }
+                             [this](size_t, void *d, NetworkingInput &, PacketHeader &ph) { return ipv4_callback(ph); }
                              );
 }
 
 // Implements ethernet promiscuous mode.
-bool Networking::ethernet_callback(NetworkingInput &, PacketHeader &ph, void *) {
+bool Networking::ethernet_callback(PacketHeader &ph) {
     auto &eth = dynamic_cast<PacketHeaderEthernet &>(ph);
     if (eth.dest()[0] & ETHERNET_MULTICAST_BIT || eth.dest() == my_mac) return eth_layer.process(eth);
     if (promiscuous) return true;
@@ -46,7 +46,7 @@ bool Networking::ethernet_callback(NetworkingInput &, PacketHeader &ph, void *) 
 }
 
 // IPv4 promiscuous mode check before hading off to the IPv4 layer. Maybe should be handled there?
-bool Networking::ipv4_callback(NetworkingInput &, PacketHeader &ph, void *) {
+bool Networking::ipv4_callback(PacketHeader &ph) {
     auto &ip = dynamic_cast<PacketHeaderIPv4 &>(ph);
     if (ip.dest() == my_ip || ip.dest() == 0xFFFFFFFF) return ipv4_layer.process(ip); // Missing multicast blocks
     if (promiscuous) return true;

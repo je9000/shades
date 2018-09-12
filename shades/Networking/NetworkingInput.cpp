@@ -22,14 +22,17 @@ void NetworkingInput::run() {
     while(keep_running) process_one(recv_into);
 }
 
+void NetworkingInput::check_timers() {
+    auto now = NetworkingInputSteadyClock::now();
+    if (now >= last_packet_time + NETWORKING_INPUT_TIMER_INTERVAL) { // 1 second intervals. Why not.
+        timer_callbacks.call_all(*this, now);
+    }
+}
+
 void NetworkingInput::process_one(PacketBuffer &recv_into) {
-    const std::chrono::seconds read_timeout(1);
     while(true) {
-        auto r = net_driver.recv(recv_into, read_timeout.count());
-        auto now = NetworkingInputSteadyClock::now();
-        if (now >= last_packet_time + read_timeout) { // 1 second intervals. Why not.
-            timer_callbacks.call_all(*this, now);
-        }
+        auto r = net_driver.recv(recv_into, NETWORKING_INPUT_TIMER_INTERVAL.count());
+        check_timers();
         if (r) break;
     }
 #ifndef DEBUG_NETWORKING_INPUT

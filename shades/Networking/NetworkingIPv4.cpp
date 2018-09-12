@@ -44,7 +44,7 @@ std::unique_ptr<PacketBuffer> IPv4FlowPendingReassembly::try_reassemble() {
 NetworkingIPv4::NetworkingIPv4(Networking &n) : networking(n) {
     register_callback(
         typeid(PacketHeaderICMP),
-        [this](size_t, void *d, NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4) { return icmp_echo_callback(nv4, ipv4, d); }
+        [this](size_t, void *d, NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4) { return icmp_echo_callback(nv4, ipv4); }
     );
     
     networking.get_input().register_timer_callback(
@@ -191,7 +191,7 @@ void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto,
     }
 }
 
-bool NetworkingIPv4::icmp_echo_callback(NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4, void *) {
+bool NetworkingIPv4::icmp_echo_callback(NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4) {
     if (ipv4.protocol() != IPPROTO::ICMP) return true;
     PacketHeaderICMP incoming_icmp(ipv4.next_header_offset());
     if (incoming_icmp.type() != ICMP::ECHO) return true;

@@ -2,6 +2,13 @@
 #include "NetworkingEthernet.hpp"
 #include "PacketHeaders.hpp"
 
+NetworkingEthernet::NetworkingEthernet(Networking &n) : networking(n) {
+    networking.get_input().register_timer_callback(
+        [this](size_t, void *d, NetworkingInput &, NetworkingInputSteadyClockTime) {
+            arp_table.clean();
+    });
+}
+
 bool NetworkingEthernet::process(PacketHeaderEthernet &packet) {
     packet.check();
     return process_next_header(packet);
@@ -108,8 +115,10 @@ EthernetAddress NetworkingEthernet::arp_resolve(const IPv4Address &ip) {
             }
             auto *writable = networking.packet_queue.get_writable();
             if (!writable) throw std::bad_alloc();
-            // recv directly so we don't trigger callbacks. Unfortunately this means we also don't trigger timers! TODO
-            while(!networking.net_driver.recv(*writable, 1));
+            
+            bool got_data = networking.net_driver.recv(*writable, 1);
+            networking.get_input().check_timers();
+            if (!got_data) continue;
             
             try {
                 PacketHeaderEthernet ether(*writable);

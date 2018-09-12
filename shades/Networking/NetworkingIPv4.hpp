@@ -148,7 +148,7 @@ private:
         size_t unknown_protocols = 0;
     } stats;
 
-    bool icmp_echo_callback(NetworkingIPv4 &, PacketHeaderIPv4 &, void *);
+    bool icmp_echo_callback(NetworkingIPv4 &, PacketHeaderIPv4 &);
     void timer_callback(NetworkingIPv4SteadyClockTime);
 public:
     IPv4RouteTable routes;

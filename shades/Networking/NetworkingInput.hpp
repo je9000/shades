@@ -12,6 +12,8 @@
 #include "PacketHeaders.hpp"
 #include "NetDriver.hpp"
 
+static const std::chrono::seconds NETWORKING_INPUT_TIMER_INTERVAL(1);
+
 class NetworkingInput;
 typedef std::function<bool(size_t, void *, NetworkingInput &, PacketHeader &)> NetworkingInputCallback;
 
@@ -37,7 +39,7 @@ public:
     void unregister_timer_callback(const size_t);
 
     void run();
-
+    void check_timers();
     void process_one(PacketBuffer &);
 
     bool process_ethernet(PacketBufferOffset);

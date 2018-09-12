@@ -31,7 +31,7 @@ public:
     ARPTable arp_table;
     Networking &networking;
     
-    NetworkingEthernet(Networking &n) : networking(n) {}
+    NetworkingEthernet(Networking &);
     
     bool process(PacketHeaderEthernet &);
     bool process_next_header(PacketHeaderEthernet &);
