@@ -17,8 +17,9 @@ Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_ma
     net_in(nd),
     promiscuous(false),
     net_driver(nd),
+    eth_layer(*this),
     ipv4_layer(*this),
-    eth_layer(*this)
+    tcp_layer(ipv4_layer)
 {
     // assign ip? dhcp?
     my_subnet_mask = my_address_and_mask.mask;

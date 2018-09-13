@@ -5,38 +5,11 @@
 #include "PacketHeader.hpp"
 #include "PacketBuffer.hpp"
 #include "BufferOffsetType.hpp"
+#include "PacketHeaderIPv4.hpp"
 
 static const unsigned int TCP_MAX_HEADER_LENGTH_QWORDS = 15;
 static const unsigned int TCP_MIN_HEADER_LENGTH_QWORDS = 5;
-
-/*
-class NetworkFlowIPv4TCP {
-public:
-    NetworkFlowIPv4 ips;
-    uint16_t source_port;
-    uint16_t dest_port;
-    
-    bool operator==(const NetworkFlowIPv4TCP &other) {
-        return (
-                ips == other.ips &&
-                source_port == other.source_port && dest_port == other.dest_port
-                );
-    }
-};
-
-namespace std {
-    template <>
-    struct hash<NetworkFlowIPv4TCP> {
-        std::size_t operator()(const NetworkFlowIPv4TCP& nfu) const {
-            if (sizeof(std::size_t) >= 8) {
-                return ((static_cast<std::size_t>(nfu.source_ip.ip_int) ^ nfu.dest_ip.ip_int) << 32) | (nfu.source_port << 16) | nfu.dest_port;
-            } else {
-                return nfu.source_ip.ip_int ^ nfu.dest_ip.ip_int ^ nfu.source_port ^ nfu.dest_port;
-            }
-        }
-    };
-}
-*/
+static const unsigned int TCP_DEFAULT_WINDOW_SIZE = 65535;
 
 class TCPOptions {
 private:
@@ -147,19 +120,15 @@ public:
     inline void fin(bool r) { flags.set_bit(60, r); }
     // End flags
     
-    inline size_t header_size() const {
-        return data_offset_bytes();
-    }
+    inline size_t header_size() const { return data_offset_bytes(); }
     
-    static size_t minimum_header_size() {
-        return TCP_MIN_HEADER_LENGTH_QWORDS * 4;
-    }
+    static size_t minimum_header_size() { return TCP_MIN_HEADER_LENGTH_QWORDS * 4;}
     
-    uint16_t calculate_checksum() const;
+    uint16_t calculate_checksum(const IPv4Address &, const IPv4Address &) const;
+    void update_checksum(const IPv4Address &, const IPv4Address &);
     
-    void update_checksum();
-    
-    void check() const;
+    void build(uint16_t, uint16_t, uint32_t);
+    void check(const IPv4Address &, const IPv4Address &) const;
 };
 
 #endif /* PacketHeaderTCP_h */

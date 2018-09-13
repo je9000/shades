@@ -13,12 +13,12 @@
 template <size_t STACK_ELEMENTS>
 class StackTracePrinter {
 public:
-    inline void operator()() {
+    inline void operator()() const {
         std::array<void *, STACK_ELEMENTS> elems;
         int count = backtrace(elems.data(), elems.size());
         char **symbols = backtrace_symbols(elems.data(), elems.size());
         std::exception_ptr ep = std::current_exception();
-        
+
         if (ep) {
             try {
                 std::rethrow_exception(ep); // Have to re-throw to make it usable.
@@ -30,6 +30,12 @@ public:
         } else {
             std::clog << "Caught unhandled and unknown exception\n";
         }
+
+        if (!symbols) {
+            std::clog << "Failed to get backtrace\n";
+            return;
+        }
+        
         for (int i = 0; i < count; i++) {
             /*
              0   shades                              0x00000001000059dc _Z12on_terminatev + 28
@@ -67,7 +73,7 @@ public:
         free(symbols);
     }
 
-    inline void pretty_mangled_name(const std::string &sv) {
+    inline void pretty_mangled_name(const std::string &sv) const {
         int status;
         if (char *dm = abi::__cxa_demangle(sv.data(), 0, 0, &status)) {
             std::clog << dm;

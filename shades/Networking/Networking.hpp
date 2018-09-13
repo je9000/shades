@@ -9,8 +9,9 @@
 #include "NetDriver.hpp"
 #include "PacketHeaders.hpp"
 #include "PacketQueue.hpp"
-#include "NetworkingIPv4.hpp"
 #include "NetworkingEthernet.hpp"
+#include "NetworkingIPv4.hpp"
+#include "NetworkingTCP.hpp"
 
 class Networking {
 protected:
@@ -23,8 +24,9 @@ public:
     EthernetAddress my_mac;
     IPv4Address my_ip;
     IPv4SubnetMask my_subnet_mask;
-    NetworkingIPv4 ipv4_layer;
     NetworkingEthernet eth_layer;
+    NetworkingIPv4 ipv4_layer;
+    NetworkingTCP tcp_layer;
 
     Networking(NetDriver &, const IPv4AddressAndMask, const std::string_view = "");
 

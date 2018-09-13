@@ -56,8 +56,6 @@ public:
     inline void copy_from(const PacketHeader &source_ph) {
         pbo.copy_from(source_ph.pbo, header_size());
     }
-    
-    virtual void check() const = 0;
 };
 
 #endif /* PacketHeader_h */

@@ -2,6 +2,7 @@
 #include "NetworkingIPv4.hpp"
 #include "PacketHeaders.hpp"
 
+// IPv4 Fragments
 void IPv4FlowPendingReassembly::check_fragment(PacketHeaderIPv4 &packet) {
     if (packet.ipid() != ipid || !needs_reassembly(packet)) throw std::runtime_error("packet isn't fragmented or wrong ip_id");
 }
@@ -40,7 +41,7 @@ std::unique_ptr<PacketBuffer> IPv4FlowPendingReassembly::try_reassemble() {
     return new_buf;
 }
 
-//NetworkingIPv4
+// NetworkingIPv4
 NetworkingIPv4::NetworkingIPv4(Networking &n) : networking(n) {
     register_callback(
         typeid(PacketHeaderICMP),
@@ -48,12 +49,13 @@ NetworkingIPv4::NetworkingIPv4(Networking &n) : networking(n) {
     );
     
     networking.get_input().register_timer_callback(
-        [this](size_t, void *d, NetworkingInput &, NetworkingInputSteadyClockTime now) {
-            timer_callback(now);
-        }
+        [this](size_t, void *d, NetworkingInput &, NetworkingInputSteadyClockTime now) { timer_callback(now); }
     );
 }
 
+Networking &NetworkingIPv4::get_network() {
+    return networking;
+}
 
 void NetworkingIPv4::timer_callback(NetworkingIPv4SteadyClockTime now) {
     clean(now);
@@ -182,6 +184,7 @@ void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto,
     } else {
         PacketHeaderIPv4 ipv4(pb);
         ipv4.build(networking.my_ip, dest, data_size, proto);
+        ipv4.update_checksum();
         
         if (networking.net_driver.is_layer3_interface()) {
             networking.net_driver.send(pb);

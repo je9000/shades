@@ -33,7 +33,7 @@ public:
 namespace std {
     template <>
     struct hash<const NetworkFlowIPv4> {
-        std::size_t operator()(const NetworkFlowIPv4 &nfu) const {
+        inline std::size_t operator()(const NetworkFlowIPv4 &nfu) const {
             if (sizeof(std::size_t) >= 8) {
                 return (static_cast<std::size_t>(nfu.source.ip_int) << 32) | (nfu.dest.ip_int ^ nfu.proto ^ nfu.ipid);
             } else {
@@ -81,9 +81,7 @@ private:
 public:
     IPv4IPIDCounter() {
         std::random_device rd;
-        std::mt19937 mt(rd());
-        std::uniform_int_distribution<> dis(0, 0xFFFF);
-        last_assigned_id = dis(mt);
+        last_assigned_id = rd();
         if (last_assigned_id == reserved_id()) last_assigned_id++;
     }
     
@@ -124,7 +122,7 @@ public:
     
     void add_packet(PacketHeaderIPv4 &);
     
-    static bool needs_reassembly(PacketHeaderIPv4 &packet) {
+    inline static bool needs_reassembly(PacketHeaderIPv4 &packet) {
         if (packet.flag_mf() || packet.frag_offset()) return true;
         return false;
     }
@@ -154,14 +152,13 @@ public:
     IPv4RouteTable routes;
     
     NetworkingIPv4(Networking &);
-    
+    Networking &get_network();
     void clean(NetworkingIPv4SteadyClockTime);
     
     size_t register_callback(const std::type_info &, const NetworkingIPv4InputCallback &, void * = nullptr);
     void unregister_callback(const std::type_info &, const size_t);
     
     bool process_next_header(PacketHeaderIPv4 &);
-    
     bool process(PacketHeaderIPv4 &);
     
     bool possibly_reassemble(PacketHeaderIPv4 &);

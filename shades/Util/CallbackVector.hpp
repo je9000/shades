@@ -17,7 +17,6 @@ public:
 template <typename T, typename... Ts>
 class CallbackVector {
 private:
-    std::random_device rd;
     std::minstd_rand rand_numbers;
     
     size_t get_next_id() {
@@ -38,7 +37,10 @@ private:
         return id;
     }
 public:
-    CallbackVector() : rand_numbers(rd()) {}
+    CallbackVector() {
+        std::random_device rd;
+        rand_numbers.seed(rd());
+    }
 
     void remove(const size_t id) {
         for(auto it = callbacks.begin(); it != callbacks.end(); ++it) {
@@ -55,13 +57,13 @@ public:
         return id;
     }
     
-    void call_all(Ts ...args) {
+    void call_all(Ts ...args) const {
         for (auto &cb : callbacks) {
             cb.func(cb.id, cb.data, args...);
         }
     }
     
-    void call_until_false(Ts ...args) {
+    void call_until_false(Ts ...args) const {
         for (auto &cb : callbacks) {
             if (!cb.func(cb.id, cb.data, args...)) break;
         }

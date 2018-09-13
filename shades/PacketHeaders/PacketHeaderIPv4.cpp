@@ -83,7 +83,6 @@ void PacketHeaderIPv4::build(const IPv4Address src_ip, const IPv4Address dest_ip
     dest = dest_ip;
     protocol = next_protocol;
     size = data_size + header_length_bytes();
-    update_checksum();
 }
 
 void PacketHeaderIPv4::print(std::ostream &os) const {
