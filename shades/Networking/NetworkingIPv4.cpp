@@ -80,6 +80,22 @@ void NetworkingIPv4::unregister_callback(const std::type_info &packet_type, cons
 }
 
 bool NetworkingIPv4::process_next_header(PacketHeaderIPv4 &packet) {
+    /*
+     * It's possible that we received more data than there is supposed to be per
+     * the IP header. That is, the sender could send 1000 bytes but the IP
+     * header says the length is 100. If that's the case, throw away the extra
+     * data and only operate on what should be there. If we didn't get enough
+     * data, drop it all.
+     */
+    PacketBuffer &pb = packet.backing_buffer();
+    size_t available_data_size = packet.header_offset().size();
+    size_t expected_data_size = packet.size();
+    if (expected_data_size > available_data_size) {
+        return false; // too little data, abort
+    } else if (expected_data_size < available_data_size) {
+        pb.set_valid_size(pb.size() - (available_data_size - expected_data_size)); // too much data, trim
+    }
+
     decltype(ipv4_callbacks)::iterator callbacks;
     switch (packet.protocol()) {
         case IPPROTO::TCP:

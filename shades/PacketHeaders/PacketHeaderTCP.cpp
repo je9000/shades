@@ -3,7 +3,8 @@
 
 uint16_t PacketHeaderTCP::calculate_checksum(const IPv4Address &srcip, const IPv4Address &destip) const {
     InetChecksumCalculator icc;
-    uint32_t reserved_and_proto = htons(IPPROTO_TCP);
+    uint16_t reserved_and_proto = htons(IPPROTO_TCP);
+    //uint32_t reserved_and_proto = htons(IPPROTO_TCP);
     //struct reserved_and_proto { uint16_t reserved; uint16_t proto; } __attribute__((packed)) reserved_and_proto = { 0, htons(IPPROTO_TCP) };
     uint32_t data_len = static_cast<uint32_t>(pbo.size());
     if (data_len != pbo.size()) throw std::out_of_range("Packet too big for TCP");
@@ -48,7 +49,7 @@ void PacketHeaderTCP::print(std::ostream &os) const {
     os << " Dest Port: " << dest_port() << "\n";
     os << " Sequence Number: " << seq_num() << "\n";
     os << " Ack Number: " << ack_num() << "\n";
-    os << " Data Offset: " << data_offset() << " (" << data_offset_bytes() << " bytes)\n";
+    os << " Data Offset: " << static_cast<unsigned int>(data_offset()) << " (" << static_cast<unsigned int>(data_offset_bytes()) << " bytes)\n";
     os << " Reserved: " << reserved() << "\n";
     os << " Flags: " << flags() << "\n";
     os << "  NS: " << ns() << "\n";

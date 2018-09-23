@@ -13,25 +13,24 @@
 #include "PacketHeaders.hpp"
 #include "PacketQueue.hpp"
 #include "StackTracePrinter.hpp"
+#include "Networking/NetworkingTCP.hpp"
 
 void on_terminate() {
     StackTracePrinter<50> stp;
-    stp();
+    std::clog << stp;
     exit(1);
 }
 
-bool print_icmp(NetworkingInput &ni, PacketHeader &p1, PacketHeader &pN, void *) {
-    //PacketHeaderICMPEcho &icmp = dynamic_cast<PacketHeaderICMPEcho &>(pN);
-    
-    std::cout << p1;
-    //PacketHeader *p = &p1;
-    /*while(p->next_header()) {
-        p = p->next_header();
-        std::cout << *p;
-    }*/
-    
-    //ni.stop_running();
-    return true;
+TCPSessionAction print_tcp(TCPSessionEvent event, const NetworkFlowTCP &flow, const TCPSession *session, const PacketHeaderTCP &tcp) {
+    std::cout << "Got TCP event " << event << "\n";
+    //std::cout << tcp << "\n";
+    if (event == CONNECTION_CLOSING) return SESSION_FIN;
+    if (event == DATA) {
+        auto p = tcp.next_header_offset();
+        std::string data((char *)p.data(), p.size());
+        std::cout << "Got: '" << data << "'\n";
+    }
+    return SESSION_OK;
 }
 
 int main(int argc, const char *argv[]) {
@@ -45,10 +44,19 @@ int main(int argc, const char *argv[]) {
     std::string default_route = "172.16.0.1";
     std::string network_init_command = "ifconfig $_IFNAME $_IPV4_ADDRESS $_IPV4_ADDRESS netmask $_IPV4_NETMASK";
 
+#define FORCE_PCAP
+#define VM
+
 #ifdef FORCE_PCAP
-     my_ip = "192.168.0.254/24";
-     default_route = "192.168.0.1";
-     network_init_command = "";
+#ifdef VM
+    my_ip = "10.100.100.3/24";
+    default_route = "10.100.100.1";
+    iface = "vboxnet0";
+#else
+    my_ip = "192.168.0.254/24";
+    default_route = "192.168.0.1";
+#endif
+    network_init_command = "";
 #endif
     
     int new_uid = 0, new_gid = 0;
@@ -79,6 +87,7 @@ int main(int argc, const char *argv[]) {
     
     //net.input().register_callback(typeid(PacketHeaderICMPEcho), print_icmp);
     net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route), netdriver->mtu);
+    net.tcp_layer.register_listener(PROTO_IPv4, 3389, print_tcp);
     
     std::clog << "net is on " << netdriver->get_ifname() << ", hwaddr " << net.my_mac << ", IPv4 " << net.my_ip << ", MTU " << netdriver->mtu << "\n";
     

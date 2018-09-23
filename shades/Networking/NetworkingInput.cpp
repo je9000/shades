@@ -1,4 +1,5 @@
 #include "NetworkingInput.hpp"
+#include "StackTracePrinter.hpp"
 
 size_t NetworkingInput::register_callback(const std::type_info &packet_type, const NetworkingInputCallback &callback, void *data) {
     return packet_type_callbacks[packet_type].add(callback, data);
@@ -35,9 +36,8 @@ void NetworkingInput::process_one(PacketBuffer &recv_into) {
         check_timers();
         if (r) break;
     }
-#ifndef DEBUG_NETWORKING_INPUT
+
     try {
-#endif
         switch (recv_into.header_type) {
             case PacketBuffer::HEADER_ETHERNET:
                 process_ethernet(recv_into);
@@ -52,12 +52,15 @@ void NetworkingInput::process_one(PacketBuffer &recv_into) {
             default:
                 break;
         }
-#ifndef DEBUG_NETWORKING_INPUT
     } catch (const invalid_packet &e) {
         PacketHeaderUnknown invalid_header(recv_into);
         if (packet_type_callbacks.count(typeid(invalid_packet))) packet_type_callbacks[typeid(invalid_packet)].call_all(*this, invalid_header);
-    } catch (const std::exception &e) {
+    }
+#ifndef DEBUG_NETWORKING_INPUT
+    catch (const std::exception &e) {
         std::cerr << "Dropping packet, callback exception: " << e.what() << "\n";
+        StackTracePrinter<20> stp;
+        stp();
     }
 #endif
 }

@@ -117,7 +117,7 @@ public:
     inline void syn(bool r) { flags.set_bit(1, r); }
     
     inline bool fin() const { return flags.get_bit(0); }
-    inline void fin(bool r) { flags.set_bit(60, r); }
+    inline void fin(bool r) { flags.set_bit(0, r); }
     // End flags
     
     inline size_t header_size() const { return data_offset_bytes(); }
@@ -126,6 +126,7 @@ public:
     
     uint16_t calculate_checksum(const IPv4Address &, const IPv4Address &) const;
     void update_checksum(const IPv4Address &, const IPv4Address &);
+    //void update_checksum(const IPv6Address &, const IPv6Address &); TODO
     
     void build(uint16_t, uint16_t, uint32_t);
     void check(const IPv4Address &, const IPv4Address &) const;

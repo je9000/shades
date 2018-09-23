@@ -6,7 +6,7 @@
 #include "NetDriver.hpp"
 #include "PacketBuffer.hpp"
 
-class NetDriverPCAP: public NetDriver {
+class NetDriverPCAP : public NetDriver {
 private:
     pcap_t *pcap = nullptr;
     char error_buffer[PCAP_ERRBUF_SIZE];

@@ -51,7 +51,6 @@ bool NetDriverPCAP::is_layer3_interface() {
 
 void NetDriverPCAP::send(PacketBuffer &pb, size_t len) {
     size_t send_len;
-    size_t unreserved_change = 0;
     if (len) {
         if (len > pb.size()) throw std::out_of_range("len > pb.size()");
         send_len = len;
@@ -73,7 +72,6 @@ void NetDriverPCAP::send(PacketBuffer &pb, size_t len) {
             default:
                 throw std::runtime_error("Unsupported packet type");;
         }
-        unreserved_change = sizeof(ip_version);
         pb.take_reserved_space(sizeof(ip_version));
         send_len += sizeof(ip_version);
         if (datalink_header == DLT_LOOP) ip_version = htonl(ip_version);

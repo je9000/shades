@@ -19,7 +19,7 @@ Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_ma
     net_driver(nd),
     eth_layer(*this),
     ipv4_layer(*this),
-    tcp_layer(ipv4_layer)
+    tcp_layer(&ipv4_layer)
 {
     // assign ip? dhcp?
     my_subnet_mask = my_address_and_mask.mask;
@@ -101,7 +101,7 @@ EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
         for (p = ifap; p; p = p->ifa_next) {
             if ((p->ifa_addr->sa_family == AF_LINK) && (p->ifa_name == ifn)) {
                 struct sockaddr_dl sdp;
-                if (p->ifa_addr->sa_len != sizeof(struct sockaddr_dl)) throw std::runtime_error("sa_len value unexpected!");
+                if (p->ifa_addr->sa_len < sizeof(struct sockaddr_dl)) throw std::runtime_error("sa_len value unexpected!");
                 memcpy(&sdp, p->ifa_addr, sizeof(struct sockaddr_dl)); // Avoid aliasing
                 memcpy(ea.data(), sdp.sdl_data + sdp.sdl_nlen, ea.size());
                 freeifaddrs(ifap);

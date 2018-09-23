@@ -28,6 +28,18 @@ public:
     virtual size_t header_size() const = 0;
     virtual std::unique_ptr<PacketHeader> recalculate_next_header() const;
     
+    inline size_t size() const {
+        return pbo.size();
+    }
+    
+    inline size_t data_size() const {
+        return size() - header_size();
+    }
+
+    inline PacketBufferOffset header_offset() {
+        return pbo;
+    }
+    
     inline PacketBufferOffset next_header_offset() {
         return PacketBufferOffset(pbo, header_size());
     }
@@ -35,15 +47,7 @@ public:
     inline const PacketBufferOffset next_header_offset() const {
         return PacketBufferOffset(pbo, header_size());
     }
-    
-    inline PacketHeader *previous_header() const {
-        throw std::logic_error("Unimplemented");
-    }
-    
-    inline PacketHeader *next_header() const {
-        throw std::logic_error("Unimplemented");
-    }
-    
+
     inline PacketBuffer &backing_buffer() const {
         return pbo.backing_buffer();
     }

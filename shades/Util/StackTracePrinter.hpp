@@ -13,7 +13,7 @@
 template <size_t STACK_ELEMENTS>
 class StackTracePrinter {
 public:
-    inline void operator()() const {
+    inline friend std::ostream& operator<<(std::ostream &os, const StackTracePrinter &stp) {
         std::array<void *, STACK_ELEMENTS> elems;
         int count = backtrace(elems.data(), elems.size());
         char **symbols = backtrace_symbols(elems.data(), elems.size());
@@ -23,17 +23,17 @@ public:
             try {
                 std::rethrow_exception(ep); // Have to re-throw to make it usable.
             } catch (const std::exception &e) {
-                std::clog << "Caught unhandled exception: " << e.what() << "\n";
+                os << "Caught unhandled exception: " << e.what() << "\n";
             } catch (...) {
-                std::clog << "Caught unhandled and unknown exception\n";
+                os << "Caught unhandled and unknown exception\n";
             }
         } else {
-            std::clog << "Caught unhandled and unknown exception\n";
+            os << "Caught unhandled and unknown exception\n";
         }
 
         if (!symbols) {
-            std::clog << "Failed to get backtrace\n";
-            return;
+            os << "Failed to get backtrace\n";
+            return os;
         }
         
         for (int i = 0; i < count; i++) {
@@ -53,7 +53,7 @@ public:
             bool in_delim = false;
             for(size_t i1 = 0; i1 < row.size(); i1++) {
                 char c = row[i1];
-                std::clog << c;
+                os << c;
                 if (c == ' ' && !in_delim) in_delim = true;
                 else if (c != ' ' && in_delim) {
                     in_delim = false;
@@ -62,24 +62,25 @@ public:
                         size_t i2;
                         for(i2 = i1; i2 < row.size(); i2++) if (row[i2] == ' ') break;
                         std::string mangled_name = row.substr(i1, i2 - i1);
-                        pretty_mangled_name(mangled_name);
+                        pretty_mangled_name(mangled_name, os);
                         i1 = i2 - 1;
                         continue;
                     }
                 }
             }
-            std::clog << '\n';
+            os << '\n';
         }
         free(symbols);
+        return os;
     }
 
-    inline void pretty_mangled_name(const std::string &sv) const {
+    static inline void pretty_mangled_name(const std::string &sv, std::ostream &os) {
         int status;
         if (char *dm = abi::__cxa_demangle(sv.data(), 0, 0, &status)) {
-            std::clog << dm;
+            os << dm;
             free(dm);
         } else {
-            std::clog << sv;
+            os << sv;
         }
     }
 };
