@@ -12,15 +12,17 @@
 
 using NetworkingTCPSteadyClock = std::chrono::steady_clock;
 using NetworkingTCPSteadyClockTime = std::chrono::time_point<NetworkingIPv4SteadyClock>;
-static const std::chrono::seconds NETWORKING_TCP_TIME_WAIT_TIMEOUT(60);
-static const int NETWORKING_TCP_MAX_KEEPALIVES = 3;
+
+const std::chrono::seconds NETWORKING_TCP_TIMEOUT_TIME_WAIT(60);
+const std::chrono::seconds NETWORKING_TCP_TIMEOUT_SYN_RECEIVED(60);
+const int NETWORKING_TCP_MAX_KEEPALIVES = 3;
+const int NETWORKING_TCP_MINIMUM_WINDOW_SIZE = 8;
+const int NETWORKING_TCP_MAX_INITIAL_CONGESTION_WINDOW = 1480 * 10;
 
 enum TCP_IP_VERSION {
     PROTO_IPv4 = 4,
     PROTO_IPv6 = 6,
 };
-
-const int NETWORK_TCP_MINIMUM_WINDOW_SIZE = 8;
 
 enum TCPConnectionStates {
     UNCONFIGURED,
@@ -144,12 +146,31 @@ enum TCPSessionAction {
     SESSION_FIN
 };
 
+enum TCPWindowStatus {
+    NEXT_IN_WINDOW,
+    LATER_IN_WINDOW,
+    AFTER_WINDOW,
+    BEFORE_WINDOW,
+    RST_OUT_OF_WINDOW
+};
+
 class NetworkFlowTCP;
 class TCPSession;
 typedef std::function<TCPSessionAction(TCPSessionEvent, const NetworkFlowTCP &, const TCPSession *, const PacketHeaderTCP &)> NetworkFlowTCPCallback;
 class NetworkFlowTCPCallbackInfo {
 public:
     NetworkFlowTCPCallback func;
+};
+
+class NetworkFlowTCPListenerCallbackInfo {
+public:
+    NetworkFlowTCPCallback func;
+    struct {
+        size_t incoming_connections;
+    } stats;
+    NetworkFlowTCPListenerCallbackInfo(const NetworkFlowTCPCallback &f) : func(f) {
+        memset(&stats, 0, sizeof(stats));
+    }
 };
 
 class NetworkingTCP;
@@ -171,13 +192,17 @@ public:
     NetworkingTCPSteadyClockTime last_recv_time;
 
     uint32_t last_sent_seq, next_expected_seq;
-    uint_fast32_t peer_window_size, my_window_size;
+    uint_fast32_t peer_window_size, peer_max_window_size, congestion_window; // RWND and CWND
+
+    uint_fast32_t my_window_size;
+    const uint_fast32_t my_max_window_size = TCP_DEFAULT_WINDOW_SIZE;
+    
     uint_fast8_t keepalives_sent;
 
     TCPSession(NetworkingTCP &, const NetworkFlowTCP &);
     void process(const PacketHeaderTCP &);
     void run_callback(TCPSessionEvent, const PacketHeaderTCP &);
-    bool check_packet_in_window(const PacketHeaderTCP &);
+    TCPWindowStatus check_packet_in_window(const PacketHeaderTCP &) const;
     
     void send_rst();
     void send_ack();
@@ -187,7 +212,7 @@ public:
     
     static bool is_handshake_syn(const PacketHeaderTCP &tcp) {
         // The first part of the handshake has to be a SYN packet with no other flags set.
-        return (tcp.syn() && !tcp.ack() && !tcp.fin() && !tcp.psh() && !tcp.rst() && tcp.window_size() >= NETWORK_TCP_MINIMUM_WINDOW_SIZE);
+        return (tcp.syn() && !tcp.ack() && !tcp.fin() && !tcp.psh() && !tcp.rst() && tcp.window_size() >= NETWORKING_TCP_MINIMUM_WINDOW_SIZE);
     }
     
     static bool is_handshake_synack(const PacketHeaderTCP &tcp) {
@@ -242,7 +267,7 @@ private:
     //NetworkingIPv6 *net6;
     std::random_device rd;
     
-    std::unordered_map<uint16_t, NetworkFlowTCPCallbackInfo> ipv4_listening_ports;
+    std::unordered_map<uint16_t, NetworkFlowTCPListenerCallbackInfo> ipv4_listening_ports;
     std::unordered_map<const NetworkFlowIPv4TCP, TCPSession> ipv4_flows;
 private:
     friend TCPSession;
@@ -260,7 +285,8 @@ public:
     void register_listener(const TCP_IP_VERSION, const uint_fast16_t, const NetworkFlowTCPCallback &);
     void unregister_listener(const TCP_IP_VERSION, const uint_fast16_t);
     
-    void send_rst(const NetworkFlowTCP &, uint32_t, TCPSession *);
+    void send_rst(const NetworkFlowTCP &, TCPSession &);
+    void send_rst(const NetworkFlowTCP &, PacketHeaderTCP &);
     TCPSession send_accept(const NetworkFlowTCP &, const PacketHeaderTCP &, const NetworkFlowTCPCallbackInfo);
     void send(const NetworkFlowTCP &, PacketHeaderTCP &, TCPSession *);
 };
