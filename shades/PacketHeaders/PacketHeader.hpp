@@ -39,6 +39,10 @@ public:
     inline PacketBufferOffset header_offset() {
         return pbo;
     }
+
+    inline const PacketBufferOffset header_offset() const {
+        return pbo;
+    }
     
     inline PacketBufferOffset next_header_offset() {
         return PacketBufferOffset(pbo, header_size());

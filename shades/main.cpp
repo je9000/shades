@@ -23,12 +23,16 @@ void on_terminate() {
 
 TCPSessionAction print_tcp(TCPSessionEvent event, const NetworkFlowTCP &flow, const TCPSession *session, const PacketHeaderTCP &tcp) {
     std::cout << "Got TCP event " << event << "\n";
-    //std::cout << tcp << "\n";
     if (event == CONNECTION_CLOSING) return SESSION_FIN;
     if (event == DATA) {
         auto p = tcp.next_header_offset();
         std::string data((char *)p.data(), p.size());
-        std::cout << "Got: '" << data << "'\n";
+        std::cout << "Got data: '";
+        for(char c : data) {
+            if (isprint(c)) std::cout << c;
+            else std::cout << static_cast<uint32_t>(c);
+        }
+        std::cout << "'\n";
     }
     return SESSION_OK;
 }

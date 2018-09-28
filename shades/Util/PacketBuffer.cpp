@@ -9,6 +9,27 @@ PacketBuffer::PacketBuffer(size_t x) {
     reset_size(x);
 }
 
+PacketBuffer::PacketBuffer(const PacketBufferOffset &pbo) {
+    reset_size(pbo.size());
+    copy_from(pbo.data(), pbo.size(), HEADER_UNKNOWN);
+}
+
+PacketBuffer::PacketBuffer(PacketBuffer &&pb) {
+    reserved_header_space = pb.reserved_header_space;
+    header_type = pb.header_type;
+    buffer.resize(pb.buffer.size());
+    buffer = std::move(pb.buffer);
+    pb.reset_size();
+    pb.header_type = HEADER_UNKNOWN;
+}
+
+PacketBuffer::PacketBuffer(const PacketBuffer &pb) {
+    reserved_header_space = pb.reserved_header_space;
+    header_type = pb.header_type;
+    buffer.resize(pb.buffer.size());
+    std::copy(pb.buffer.begin(), pb.buffer.end(), buffer.begin());
+}
+
 void PacketBuffer::reset_size(size_t x) {
     if (x + reserved_header_space < buffer.size()) reset_reserved_space();
     buffer.resize(x + reserved_header_space);
@@ -35,6 +56,7 @@ size_t PacketBuffer::get_reserved_space() const {
 }
 
 void PacketBuffer::reset_reserved_space() {
+    if (RESERVED_HEADER_SPACE >= buffer.size()) throw std::out_of_range("Buffer too small");
     reserved_header_space = RESERVED_HEADER_SPACE;
 }
 
@@ -111,11 +133,14 @@ size_t PacketBufferOffset::backing_buffer_offset() const {
     return offset;
 }
 
-void PacketBufferOffset::copy_from(const PacketBufferOffset &source_pbo, size_t len, size_t dest_offset) {
-    if (len == 0) len = source_pbo.size();
+void PacketBufferOffset::copy_from(const unsigned char *source, size_t len, size_t dest_offset) {
     size_t new_end_pos = len + dest_offset;
     if (new_end_pos < len || new_end_pos > size()) throw std::length_error("not enough room in buffer");
-    memcpy(at(dest_offset), source_pbo.data(), len);
+    memcpy(at(dest_offset), source, len);
+}
+
+void PacketBufferOffset::copy_from(const PacketBufferOffset &source_pbo, size_t len, size_t dest_offset) {
+    copy_from(source_pbo.data(), len ? len : source_pbo.size(), dest_offset);
 }
 
 std::ostream& operator<<(std::ostream &os, const PacketBufferOffset &pbo) {

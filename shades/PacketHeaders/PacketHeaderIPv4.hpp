@@ -53,6 +53,7 @@ public:
 
     IPv4Address() : ip_int(0) {};
     IPv4Address(uint32_t ip_int) : ip_int(ip_int) {};
+    IPv4Address(const IPv4Address &ip) : ip_int(ip.ip_int) {};
     IPv4Address(const std::string_view s) : ip_int(str_to_ip(s)) {};
     
     inline std::string as_string() const {

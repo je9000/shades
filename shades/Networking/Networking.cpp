@@ -100,11 +100,13 @@ EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
         struct ifaddrs *p;
         for (p = ifap; p; p = p->ifa_next) {
             if ((p->ifa_addr->sa_family == AF_LINK) && (p->ifa_name == ifn)) {
-                struct sockaddr_dl sdp;
                 if (p->ifa_addr->sa_len < sizeof(struct sockaddr_dl)) throw std::runtime_error("sa_len value unexpected!");
-                memcpy(&sdp, p->ifa_addr, sizeof(struct sockaddr_dl)); // Avoid aliasing
-                memcpy(ea.data(), sdp.sdl_data + sdp.sdl_nlen, ea.size());
+                struct sockaddr_dl *sdp = static_cast<struct sockaddr_dl *>(malloc(p->ifa_addr->sa_len)); // Don't alias, just copy.
+                if (!sdp) throw std::bad_alloc();
+                memcpy(sdp, p->ifa_addr, sizeof(struct sockaddr_dl)); // Avoid aliasing
+                memcpy(ea.data(), sdp->sdl_data + sdp->sdl_nlen, ea.size());
                 freeifaddrs(ifap);
+                free(sdp);
                 return ea;
             }
         }

@@ -11,6 +11,15 @@ static const unsigned int TCP_MAX_HEADER_LENGTH_QWORDS = 15;
 static const unsigned int TCP_MIN_HEADER_LENGTH_QWORDS = 5;
 static const unsigned int TCP_DEFAULT_WINDOW_SIZE = 65535;
 
+static const unsigned int TCP_FLAG_FIN = 1 << 0;
+static const unsigned int TCP_FLAG_SYN = 1 << 1;
+static const unsigned int TCP_FLAG_RST = 1 << 2;
+static const unsigned int TCP_FLAG_PSH = 1 << 3;
+static const unsigned int TCP_FLAG_ACK = 1 << 4;
+static const unsigned int TCP_FLAG_URG = 1 << 5;
+static const unsigned int TCP_FLAG_ECE = 1 << 6;
+static const unsigned int TCP_FLAG_CWR = 1 << 7;
+
 class TCPOptions {
 private:
     size_t qwords = 0;

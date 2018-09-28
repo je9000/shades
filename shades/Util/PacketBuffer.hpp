@@ -41,6 +41,10 @@ public:
     
     PacketBuffer();
     PacketBuffer(size_t);
+    PacketBuffer(const PacketBufferOffset &);
+
+    PacketBuffer(const PacketBuffer &);
+    PacketBuffer(PacketBuffer &&);
 
     void reset_size(size_t = MAX_FRAME_SIZE);
     size_t size() const;
@@ -101,6 +105,7 @@ public:
     size_t backing_buffer_offset() const;
 
     void copy_from(const PacketBufferOffset &, size_t = 0, size_t = 0);
+    void copy_from(const unsigned char *, size_t, size_t = 0);
 };
 
 #endif /* PacketBuffer_h */
