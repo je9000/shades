@@ -1,0 +1,465 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		523BFB582126F339004633C3 /* NetworkingEthernet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F0272D2125D7D400223C1E /* NetworkingEthernet.cpp */; };
+		523BFB5A2126F39A004633C3 /* NetworkingIPv4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB592126F39A004633C3 /* NetworkingIPv4.cpp */; };
+		523BFB5C21280A38004633C3 /* NetDriverPCAP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB5B21280A38004633C3 /* NetDriverPCAP.cpp */; };
+		523BFB6021281BC5004633C3 /* PacketHeaderARP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB5F21281BC5004633C3 /* PacketHeaderARP.cpp */; };
+		523BFB6221281C37004633C3 /* PacketHeaderEthernet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB6121281C37004633C3 /* PacketHeaderEthernet.cpp */; };
+		523BFB6421281E5E004633C3 /* PacketHeaderICMP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB6321281E5E004633C3 /* PacketHeaderICMP.cpp */; };
+		523BFB6621281F5A004633C3 /* PacketHeaderIPv4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB6521281F5A004633C3 /* PacketHeaderIPv4.cpp */; };
+		524867C42147A67E00C2B34F /* NetworkingTCP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 524867C32147A67E00C2B34F /* NetworkingTCP.cpp */; };
+		5288971E20BE418700076254 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5288971D20BE418700076254 /* main.cpp */; };
+		52AF504A21284FB600BF37C4 /* PacketHeaderTCP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504921284FB600BF37C4 /* PacketHeaderTCP.cpp */; };
+		52AF504C2128515E00BF37C4 /* PacketHeaderUDP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504B2128515E00BF37C4 /* PacketHeaderUDP.cpp */; };
+		52AF504E2128520100BF37C4 /* NetworkingInput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504D2128520100BF37C4 /* NetworkingInput.cpp */; };
+		52AF5050212854AE00BF37C4 /* Networking.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504F212854AE00BF37C4 /* Networking.cpp */; };
+		52AF50522128562700BF37C4 /* PacketBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF50512128562700BF37C4 /* PacketBuffer.cpp */; };
+		52AF5054212859E100BF37C4 /* PacketHeader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF5053212859E100BF37C4 /* PacketHeader.cpp */; };
+		52AF505621285BBD00BF37C4 /* NextHeader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF505521285BBD00BF37C4 /* NextHeader.cpp */; };
+		52AF5058212CDE4D00BF37C4 /* NetDriverUTun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF5057212CDE4D00BF37C4 /* NetDriverUTun.cpp */; };
+		52AF505A2143011F00BF37C4 /* NetDriver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF50592143011F00BF37C4 /* NetDriver.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5288971820BE418700076254 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		522CCDA820CCE3CC007968E7 /* PacketHeaderARP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderARP.hpp; sourceTree = "<group>"; };
+		522CCDAA20CD1C02007968E7 /* PacketHeaders.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaders.hpp; sourceTree = "<group>"; };
+		522CCDAC20CD1CB9007968E7 /* ARPTable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ARPTable.hpp; sourceTree = "<group>"; };
+		522CCDAD20CD3105007968E7 /* IPv4RouteTable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = IPv4RouteTable.hpp; sourceTree = "<group>"; };
+		522CCDAF20CFB10D007968E7 /* NetworkingInput.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetworkingInput.hpp; sourceTree = "<group>"; };
+		522CCDB020D0B971007968E7 /* Networking.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Networking.hpp; sourceTree = "<group>"; };
+		523BFB592126F39A004633C3 /* NetworkingIPv4.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetworkingIPv4.cpp; sourceTree = "<group>"; };
+		523BFB5B21280A38004633C3 /* NetDriverPCAP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetDriverPCAP.cpp; sourceTree = "<group>"; };
+		523BFB5F21281BC5004633C3 /* PacketHeaderARP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeaderARP.cpp; sourceTree = "<group>"; };
+		523BFB6121281C37004633C3 /* PacketHeaderEthernet.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeaderEthernet.cpp; sourceTree = "<group>"; };
+		523BFB6321281E5E004633C3 /* PacketHeaderICMP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeaderICMP.cpp; sourceTree = "<group>"; };
+		523BFB6521281F5A004633C3 /* PacketHeaderIPv4.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeaderIPv4.cpp; sourceTree = "<group>"; };
+		524867C2214780AC00C2B34F /* CallbackVector.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = CallbackVector.hpp; sourceTree = "<group>"; };
+		524867C32147A67E00C2B34F /* NetworkingTCP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetworkingTCP.cpp; sourceTree = "<group>"; };
+		524867C52147A69300C2B34F /* NetworkingTCP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetworkingTCP.hpp; sourceTree = "<group>"; };
+		52847C6520BFFD83005E536D /* PacketHeaderEthernet.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderEthernet.hpp; sourceTree = "<group>"; };
+		52847C6620BFFEF1005E536D /* InetChecksum.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = InetChecksum.hpp; sourceTree = "<group>"; };
+		52847C6820C14C2B005E536D /* PacketBuffer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketBuffer.hpp; sourceTree = "<group>"; };
+		52847C6920C14E20005E536D /* PacketHeader.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeader.hpp; sourceTree = "<group>"; };
+		52847C6A20C289FA005E536D /* PacketHeaderIPv4.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderIPv4.hpp; sourceTree = "<group>"; };
+		52847C6B20C68FEC005E536D /* BufferOffsetType.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BufferOffsetType.hpp; sourceTree = "<group>"; };
+		52847C6C20C7DE9D005E536D /* PacketHeaderICMP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderICMP.hpp; sourceTree = "<group>"; };
+		52847C6D20C7E605005E536D /* PacketHeaderUnknown.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderUnknown.hpp; sourceTree = "<group>"; };
+		5288971A20BE418700076254 /* shades */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = shades; sourceTree = BUILT_PRODUCTS_DIR; };
+		5288971D20BE418700076254 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		5288972420BEA8CF00076254 /* NetDriverPCAP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetDriverPCAP.hpp; sourceTree = "<group>"; };
+		5288972520BEA8E100076254 /* NetDriver.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetDriver.hpp; sourceTree = "<group>"; };
+		5288972620BEA9B200076254 /* HexDump.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = HexDump.hpp; sourceTree = "<group>"; };
+		52AF504921284FB600BF37C4 /* PacketHeaderTCP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeaderTCP.cpp; sourceTree = "<group>"; };
+		52AF504B2128515E00BF37C4 /* PacketHeaderUDP.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeaderUDP.cpp; sourceTree = "<group>"; };
+		52AF504D2128520100BF37C4 /* NetworkingInput.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetworkingInput.cpp; sourceTree = "<group>"; };
+		52AF504F212854AE00BF37C4 /* Networking.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Networking.cpp; sourceTree = "<group>"; };
+		52AF50512128562700BF37C4 /* PacketBuffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketBuffer.cpp; sourceTree = "<group>"; };
+		52AF5053212859E100BF37C4 /* PacketHeader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PacketHeader.cpp; sourceTree = "<group>"; };
+		52AF505521285BBD00BF37C4 /* NextHeader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NextHeader.cpp; sourceTree = "<group>"; };
+		52AF5057212CDE4D00BF37C4 /* NetDriverUTun.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetDriverUTun.cpp; sourceTree = "<group>"; };
+		52AF50592143011F00BF37C4 /* NetDriver.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetDriver.cpp; sourceTree = "<group>"; };
+		52F0272821102A5600223C1E /* PacketHeaderTCP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderTCP.hpp; sourceTree = "<group>"; };
+		52F0272A2110497D00223C1E /* PacketHeaderUDP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderUDP.hpp; sourceTree = "<group>"; };
+		52F0272B2114758700223C1E /* NetworkingIPv4.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetworkingIPv4.hpp; sourceTree = "<group>"; };
+		52F0272C2125D27100223C1E /* NetworkingEthernet.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetworkingEthernet.hpp; sourceTree = "<group>"; };
+		52F0272D2125D7D400223C1E /* NetworkingEthernet.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = NetworkingEthernet.cpp; sourceTree = "<group>"; };
+		52F73A7320D8C3E2000A0467 /* NetDriverUTun.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = NetDriverUTun.hpp; sourceTree = "<group>"; };
+		52F73A7520DE568C000A0467 /* StackTracePrinter.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = StackTracePrinter.hpp; sourceTree = "<group>"; };
+		52F73A7620DE5981000A0467 /* PacketQueue.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketQueue.hpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5288971720BE418700076254 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		522CCDA920CD1BD0007968E7 /* PacketHeaders */ = {
+			isa = PBXGroup;
+			children = (
+				52847C6920C14E20005E536D /* PacketHeader.hpp */,
+				52AF5053212859E100BF37C4 /* PacketHeader.cpp */,
+				522CCDAA20CD1C02007968E7 /* PacketHeaders.hpp */,
+				522CCDA820CCE3CC007968E7 /* PacketHeaderARP.hpp */,
+				523BFB5F21281BC5004633C3 /* PacketHeaderARP.cpp */,
+				52847C6520BFFD83005E536D /* PacketHeaderEthernet.hpp */,
+				523BFB6121281C37004633C3 /* PacketHeaderEthernet.cpp */,
+				52847C6C20C7DE9D005E536D /* PacketHeaderICMP.hpp */,
+				523BFB6321281E5E004633C3 /* PacketHeaderICMP.cpp */,
+				52847C6A20C289FA005E536D /* PacketHeaderIPv4.hpp */,
+				523BFB6521281F5A004633C3 /* PacketHeaderIPv4.cpp */,
+				52F0272821102A5600223C1E /* PacketHeaderTCP.hpp */,
+				52AF504921284FB600BF37C4 /* PacketHeaderTCP.cpp */,
+				52F0272A2110497D00223C1E /* PacketHeaderUDP.hpp */,
+				52AF504B2128515E00BF37C4 /* PacketHeaderUDP.cpp */,
+				52847C6D20C7E605005E536D /* PacketHeaderUnknown.hpp */,
+				52AF505521285BBD00BF37C4 /* NextHeader.cpp */,
+			);
+			path = PacketHeaders;
+			sourceTree = "<group>";
+		};
+		522CCDAB20CD1C8F007968E7 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				522CCDAC20CD1CB9007968E7 /* ARPTable.hpp */,
+				522CCDAD20CD3105007968E7 /* IPv4RouteTable.hpp */,
+				522CCDB020D0B971007968E7 /* Networking.hpp */,
+				52AF504F212854AE00BF37C4 /* Networking.cpp */,
+				52F0272C2125D27100223C1E /* NetworkingEthernet.hpp */,
+				52F0272D2125D7D400223C1E /* NetworkingEthernet.cpp */,
+				522CCDAF20CFB10D007968E7 /* NetworkingInput.hpp */,
+				52AF504D2128520100BF37C4 /* NetworkingInput.cpp */,
+				52F0272B2114758700223C1E /* NetworkingIPv4.hpp */,
+				523BFB592126F39A004633C3 /* NetworkingIPv4.cpp */,
+				524867C52147A69300C2B34F /* NetworkingTCP.hpp */,
+				524867C32147A67E00C2B34F /* NetworkingTCP.cpp */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		522CCDB120D113B8007968E7 /* NetDriver */ = {
+			isa = PBXGroup;
+			children = (
+				5288972520BEA8E100076254 /* NetDriver.hpp */,
+				52AF50592143011F00BF37C4 /* NetDriver.cpp */,
+				5288972420BEA8CF00076254 /* NetDriverPCAP.hpp */,
+				523BFB5B21280A38004633C3 /* NetDriverPCAP.cpp */,
+				52F73A7320D8C3E2000A0467 /* NetDriverUTun.hpp */,
+				52AF5057212CDE4D00BF37C4 /* NetDriverUTun.cpp */,
+			);
+			path = NetDriver;
+			sourceTree = "<group>";
+		};
+		5288971120BE418700076254 = {
+			isa = PBXGroup;
+			children = (
+				5288971C20BE418700076254 /* shades */,
+				5288971B20BE418700076254 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5288971B20BE418700076254 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5288971A20BE418700076254 /* shades */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5288971C20BE418700076254 /* shades */ = {
+			isa = PBXGroup;
+			children = (
+				522CCDB120D113B8007968E7 /* NetDriver */,
+				522CCDAB20CD1C8F007968E7 /* Networking */,
+				522CCDA920CD1BD0007968E7 /* PacketHeaders */,
+				52F73A7420DE560F000A0467 /* Util */,
+				5288971D20BE418700076254 /* main.cpp */,
+			);
+			path = shades;
+			sourceTree = "<group>";
+		};
+		52F73A7420DE560F000A0467 /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				52847C6B20C68FEC005E536D /* BufferOffsetType.hpp */,
+				524867C2214780AC00C2B34F /* CallbackVector.hpp */,
+				5288972620BEA9B200076254 /* HexDump.hpp */,
+				52847C6620BFFEF1005E536D /* InetChecksum.hpp */,
+				52847C6820C14C2B005E536D /* PacketBuffer.hpp */,
+				52AF50512128562700BF37C4 /* PacketBuffer.cpp */,
+				52F73A7620DE5981000A0467 /* PacketQueue.hpp */,
+				52F73A7520DE568C000A0467 /* StackTracePrinter.hpp */,
+			);
+			path = Util;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5288971920BE418700076254 /* shades */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5288972120BE418700076254 /* Build configuration list for PBXNativeTarget "shades" */;
+			buildPhases = (
+				5288971620BE418700076254 /* Sources */,
+				5288971720BE418700076254 /* Frameworks */,
+				5288971820BE418700076254 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = shades;
+			productName = shades;
+			productReference = 5288971A20BE418700076254 /* shades */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5288971220BE418700076254 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0940;
+				ORGANIZATIONNAME = "John Eaglesham";
+				TargetAttributes = {
+					5288971920BE418700076254 = {
+						CreatedOnToolsVersion = 9.4;
+					};
+				};
+			};
+			buildConfigurationList = 5288971520BE418700076254 /* Build configuration list for PBXProject "shades" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 5288971120BE418700076254;
+			productRefGroup = 5288971B20BE418700076254 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5288971920BE418700076254 /* shades */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5288971620BE418700076254 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52AF5054212859E100BF37C4 /* PacketHeader.cpp in Sources */,
+				52AF5058212CDE4D00BF37C4 /* NetDriverUTun.cpp in Sources */,
+				52AF50522128562700BF37C4 /* PacketBuffer.cpp in Sources */,
+				52AF504A21284FB600BF37C4 /* PacketHeaderTCP.cpp in Sources */,
+				52AF505A2143011F00BF37C4 /* NetDriver.cpp in Sources */,
+				523BFB5A2126F39A004633C3 /* NetworkingIPv4.cpp in Sources */,
+				523BFB6621281F5A004633C3 /* PacketHeaderIPv4.cpp in Sources */,
+				52AF5050212854AE00BF37C4 /* Networking.cpp in Sources */,
+				523BFB6221281C37004633C3 /* PacketHeaderEthernet.cpp in Sources */,
+				523BFB6421281E5E004633C3 /* PacketHeaderICMP.cpp in Sources */,
+				52AF504E2128520100BF37C4 /* NetworkingInput.cpp in Sources */,
+				523BFB5C21280A38004633C3 /* NetDriverPCAP.cpp in Sources */,
+				523BFB582126F339004633C3 /* NetworkingEthernet.cpp in Sources */,
+				5288971E20BE418700076254 /* main.cpp in Sources */,
+				52AF504C2128515E00BF37C4 /* PacketHeaderUDP.cpp in Sources */,
+				524867C42147A67E00C2B34F /* NetworkingTCP.cpp in Sources */,
+				523BFB6021281BC5004633C3 /* PacketHeaderARP.cpp in Sources */,
+				52AF505621285BBD00BF37C4 /* NextHeader.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5288971F20BE418700076254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ADDRESS_SANITIZER_CONTAINER_OVERFLOW = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_ASSIGN_ENUM = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					DEBUG_NETWORKING_INPUT,
+					DEBUG_PCAP_DROPS,
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNKNOWN_PRAGMAS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		5288972020BE418700076254 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_ASSIGN_ENUM = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNKNOWN_PRAGMAS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		5288972220BE418700076254 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_STATIC_ANALYZER_MODE = deep;
+				CLANG_WARN_ASSIGN_ENUM = YES;
+				CODE_SIGN_STYLE = Manual;
+				GCC_DYNAMIC_NO_PIC = YES;
+				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
+				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
+				GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES;
+				GCC_WARN_SHADOW = YES;
+				GCC_WARN_UNKNOWN_PRAGMAS = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				HEADER_SEARCH_PATHS = "~/src/boost/";
+				LD_NO_PIE = YES;
+				OTHER_LDFLAGS = "-lpcap";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		5288972320BE418700076254 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_STATIC_ANALYZER_MODE = deep;
+				CLANG_WARN_ASSIGN_ENUM = YES;
+				CODE_SIGN_STYLE = Manual;
+				GCC_DYNAMIC_NO_PIC = YES;
+				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
+				GCC_WARN_HIDDEN_VIRTUAL_FUNCTIONS = YES;
+				GCC_WARN_NON_VIRTUAL_DESTRUCTOR = YES;
+				GCC_WARN_SHADOW = YES;
+				GCC_WARN_UNKNOWN_PRAGMAS = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				HEADER_SEARCH_PATHS = "~/src/boost/";
+				LD_NO_PIE = YES;
+				OTHER_LDFLAGS = "-lpcap";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				RUN_CLANG_STATIC_ANALYZER = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5288971520BE418700076254 /* Build configuration list for PBXProject "shades" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5288971F20BE418700076254 /* Debug */,
+				5288972020BE418700076254 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5288972120BE418700076254 /* Build configuration list for PBXNativeTarget "shades" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5288972220BE418700076254 /* Debug */,
+				5288972320BE418700076254 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5288971220BE418700076254 /* Project object */;
+}
