@@ -38,6 +38,7 @@ public:
     size_t register_timer_callback(const NetworkingTimerCallback &, void *data = nullptr);
     void unregister_timer_callback(const size_t);
 
+    NetDriver &get_driver();
     void run();
     void check_timers();
     void process_one(PacketBuffer &);

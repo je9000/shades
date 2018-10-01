@@ -147,5 +147,12 @@ bool NetDriverPCAP::recv(PacketBuffer &pb, int timeout) {
     
     if (header->caplen <= pcap_header_size) throw std::out_of_range("caplen too small for header");
     pb.copy_from(data + pcap_header_size, header->caplen - pcap_header_size, pb_header_type);
+
+#ifdef DEBUG_PCAP_DROPS
+    pcap_stat ps;
+    pcap_stats(pcap, &ps);
+    if (ps.ps_drop || ps.ps_ifdrop) std::clog << "PCAP ps_drop=" << ps.ps_drop << " ps_ifdrop=" << ps.ps_ifdrop << "\n";
+#endif
+
     return true;
 }

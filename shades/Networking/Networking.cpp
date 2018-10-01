@@ -13,10 +13,10 @@
 #include <net/if_dl.h>
 #endif
 
-Networking::Networking(NetDriver &nd, const IPv4AddressAndMask my_address_and_mask, const std::string_view init_command) :
-    net_in(nd),
+Networking::Networking(NetworkingInput &ni, const IPv4AddressAndMask my_address_and_mask, const std::string_view init_command) :
+    net_in(ni),
     promiscuous(false),
-    net_driver(nd),
+    net_driver(ni.get_driver()),
     eth_layer(*this),
     ipv4_layer(*this),
     tcp_layer(&ipv4_layer)

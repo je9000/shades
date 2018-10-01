@@ -16,7 +16,7 @@
 class Networking {
 protected:
     friend NetworkingEthernet; // So the ARP query can block.
-    NetworkingInput net_in;
+    NetworkingInput &net_in;
     PacketQueue<100> packet_queue;
     bool promiscuous;
 public:
@@ -28,7 +28,7 @@ public:
     NetworkingIPv4 ipv4_layer;
     NetworkingTCP tcp_layer;
 
-    Networking(NetDriver &, const IPv4AddressAndMask, const std::string_view = "");
+    Networking(NetworkingInput &, const IPv4AddressAndMask, const std::string_view = "");
 
     // Implements ethernet promiscuous mode.
     bool ethernet_callback(PacketHeader &);

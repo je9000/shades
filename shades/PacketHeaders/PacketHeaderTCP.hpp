@@ -9,7 +9,7 @@
 
 static const unsigned int TCP_MAX_HEADER_LENGTH_QWORDS = 15;
 static const unsigned int TCP_MIN_HEADER_LENGTH_QWORDS = 5;
-static const unsigned int TCP_DEFAULT_WINDOW_SIZE = 65535;
+static const unsigned int TCP_DEFAULT_WINDOW_SIZE = 14800; // Arbitrary
 
 static const unsigned int TCP_FLAG_FIN = 1 << 0;
 static const unsigned int TCP_FLAG_SYN = 1 << 1;

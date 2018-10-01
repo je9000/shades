@@ -4,7 +4,7 @@
 #include "PacketHeaderIPv4.hpp"
 #include "PacketHeaderTCP.hpp"
 
-#include <string_view>
+#include <string>
 #include <cstdint>
 #include <map>
 #include <unordered_map>
@@ -15,14 +15,16 @@
 using NetworkingTCPSteadyClock = std::chrono::steady_clock;
 using NetworkingTCPSteadyClockTime = std::chrono::time_point<NetworkingIPv4SteadyClock>;
 
-// ALl of these are arbitrary unless otherwise specified.
+// All of these are arbitrary unless otherwise specified.
 const std::chrono::seconds NETWORKING_TCP_TIMEOUT_TIME_WAIT(60);
 const std::chrono::seconds NETWORKING_TCP_TIMEOUT_SYN_RECEIVED(60);
-const std::chrono::seconds NETWORKING_TCP_IDLE_TIMEOUT(10); // Per RFC
-const std::chrono::seconds NETWORKING_TCP_TIME_BETWEEN_KEEPALIVES(10);
+const std::chrono::seconds NETWORKING_TCP_IDLE_TIMEOUT(7200); // Per RFC
+const std::chrono::seconds NETWORKING_TCP_TIME_BETWEEN_KEEPALIVES(30);
+const std::chrono::seconds NETWORKING_TCP_RETRANSMIT_TIMEOUT(10);
+const std::chrono::milliseconds NETWORKING_TCP_CONGESTION_SEND_DELAY(5);
 const int NETWORKING_TCP_MAX_KEEPALIVES = 3;
-const int NETWORKING_TCP_MINIMUM_WINDOW_SIZE = 8;
-const int NETWORKING_TCP_MAX_INITIAL_CONGESTION_WINDOW = 1480 * 10;
+const int NETWORKING_TCP_MINIMUM_INITIAL_WINDOW_SIZE = 8;
+const int NETWORKING_TCP_MAX_INITIAL_CONGESTION_WINDOW = 1460 * 10;
 const int NETWORKING_TCP_LISTEN_QUEUE_SIZE = 100;
 
 const unsigned int NETWORKING_TCP_CALLBACK_OK = 0;
@@ -171,7 +173,7 @@ enum TCPWindowStatus {
 
 class NetworkFlowTCP;
 class TCPSession;
-typedef std::function<TCPSessionAction(TCPSessionEvent, const NetworkFlowTCP &, const TCPSession *, const PacketHeaderTCP &)> NetworkFlowTCPCallback;
+typedef std::function<TCPSessionAction(TCPSessionEvent, const NetworkFlowTCP &, TCPSession *, const PacketHeaderTCP &)> NetworkFlowTCPCallback;
 class NetworkFlowTCPCallbackInfo {
 public:
     NetworkFlowTCPCallback func;
@@ -192,11 +194,10 @@ public:
 
 class TCPInflightData {
 public:
-    uint32_t seq, data_size;
+    uint32_t data_size;
     NetworkingTCPSteadyClockTime ts;
     PacketBuffer pb;
     TCPInflightData(const PacketHeaderTCP &tcp) :
-        seq(tcp.seq_num()),
         data_size(static_cast<uint32_t>(tcp.data_size())), // Again, limited to 64k
         ts(NetworkingTCPSteadyClock::now()),
         pb(tcp.header_offset())
@@ -205,6 +206,19 @@ public:
 };
 
 typedef std::map<uint_fast32_t, TCPInflightData> TCPInflightDataOrderedBySeq;
+
+class UnackedData {
+private:
+    TCPInflightDataOrderedBySeq data;
+    uint64_t data_size_bytes = 0;
+public:
+    auto begin() { return data.begin(); }
+    auto end() { return data.end(); }
+    auto count() { return data.size(); }
+    auto size() { return data_size_bytes; }
+    auto erase(TCPInflightDataOrderedBySeq::iterator it) { data_size_bytes -= it->second.data_size; return data.erase(it); }
+    auto emplace(uint32_t s, const PacketHeaderTCP &tcp) { data_size_bytes += tcp.data_size(); return data.emplace(s, tcp); }
+};
 
 class NetworkingTCP;
 class TCPSession {
@@ -222,16 +236,19 @@ public:
     TCPConnectionState state;
     NetworkingTCPSteadyClockTime last_recv_time;
 
-    uint32_t next_seq_to_send, next_expected_seq, last_received_ack;
-    uint_fast32_t peer_window_size, peer_max_window_size, congestion_window; // RWND and CWND
+    uint32_t next_seq_to_send; // SND.NXT
+    uint32_t next_expected_seq; // RCV.NXT
+    uint32_t last_received_ack; // Used for keepalives
+    uint32_t last_sent_ack; // Used to see if we've already sent an ACK within a method
+    uint_fast32_t peer_window_size, congestion_window; // RWND and CWND
 
-    uint_fast32_t my_window_size;
+    uint_fast32_t my_window_size; // RCV.WND
     const uint_fast32_t my_max_window_size = TCP_DEFAULT_WINDOW_SIZE;
     
     uint_fast8_t keepalives_sent;
     NetworkingTCPSteadyClockTime last_keepalive_time;
 
-    TCPInflightDataOrderedBySeq unacked;
+    UnackedData unacked;
     TCPInflightDataOrderedBySeq received_out_of_order;
 
     TCPSession(NetworkingTCP &, NetworkFlowTCPCallback &);
@@ -243,7 +260,8 @@ public:
     void process(const PacketHeaderTCP &);
     unsigned int run_callback(TCPSessionEvent, const PacketHeaderTCP &);
     TCPWindowStatus check_packet_in_window(const PacketHeaderTCP &) const;
-    void free_acked(uint32_t);
+    bool ack_is_valid(uint32_t, uint32_t);
+    void process_ack(uint32_t);
 
     void send(PacketHeaderTCP &);
     void send_rst();
@@ -251,12 +269,12 @@ public:
     void send_keepalive_ack();
     void send_fin();
     void send_accept(const PacketHeaderTCP &);
-    void send_data(std::string_view);
+    void send_data(std::string &);
     void send_data(const char *, size_t);
     
     static bool is_handshake_syn(const PacketHeaderTCP &tcp) {
         // The first part of the handshake has to be a SYN packet with no other flags set.
-        return (tcp.syn() && !tcp.ack() && !tcp.fin() && !tcp.psh() && !tcp.rst() && tcp.window_size() >= NETWORKING_TCP_MINIMUM_WINDOW_SIZE);
+        return (tcp.syn() && !tcp.ack() && !tcp.fin() && !tcp.psh() && !tcp.rst() && tcp.window_size() >= NETWORKING_TCP_MINIMUM_INITIAL_WINDOW_SIZE);
     }
     
     static bool is_handshake_synack(const PacketHeaderTCP &tcp) {
@@ -341,8 +359,7 @@ public:
     void register_listener(const TCP_IP_VERSION, const uint_fast16_t, const NetworkFlowTCPCallback &);
     void unregister_listener(const TCP_IP_VERSION, const uint_fast16_t);
     
-    void send_rst(const NetworkFlowTCP &, TCPSession &);
-    void send_rst(const NetworkFlowTCP &, PacketHeaderTCP &);
+    void send_rst(const NetworkFlowTCP &, const PacketHeaderTCP &);
     void send(const NetworkFlowTCP &, PacketHeaderTCP &, TCPSession *);
 };
 

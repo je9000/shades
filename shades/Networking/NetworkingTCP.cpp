@@ -3,6 +3,7 @@
 #include "NetworkingTCP.hpp"
 
 #include <random>
+#include <thread>
 
 bool NetworkFlowIPv4TCP::operator==(const NetworkFlowIPv4TCP &other) const {
     return (
@@ -16,12 +17,12 @@ bool NetworkFlowIPv4TCP::operator==(const NetworkFlowIPv4TCP &other) const {
 // TCP Session
 
 TCPSession::TCPSession(NetworkingTCP &n, NetworkFlowTCPCallback &cb) :
-        net_tcp(n), flow(nullptr), next_seq_to_send(net_tcp.random_device()()
-    ) {
+        net_tcp(n), flow(nullptr), next_seq_to_send(net_tcp.random_device()())
+    {
     memset(&stats, 0, sizeof(stats));
     my_window_size = my_max_window_size;
-    next_expected_seq = last_received_ack = 0;
-    peer_window_size = peer_max_window_size = 0;
+    next_expected_seq = last_received_ack = last_sent_ack = 0;
+    peer_window_size = 0;
     keepalives_sent = 0;
     callback.func = cb;
     //std::clog << "TCPSession " << flow.ip_ver() << "\n";
@@ -57,31 +58,59 @@ TCPWindowStatus TCPSession::check_packet_in_window(const PacketHeaderTCP &tcp) c
     return AFTER_WINDOW;
 }
 
-void TCPSession::send_data(std::string_view sv) {
-    send_data(sv.data(), sv.size());
+void TCPSession::send_data(std::string &s) {
+    send_data(s.data(), s.size());
 }
 
 void TCPSession::send_data(const char *data, size_t len) {
     PacketBuffer pb(PacketHeaderTCP::minimum_header_size() + len);
     PacketHeaderTCP sendme(pb);
-    auto data_offset = sendme.next_header_offset();
 
     sendme.build(flow->local_port, flow->remote_port, next_seq_to_send);
     sendme.psh(true);
+    sendme.ack(true);
+    sendme.ack_num = next_expected_seq;
+    last_sent_ack = next_expected_seq;
 
+    auto data_offset = sendme.next_header_offset();
     data_offset.copy_from(reinterpret_cast<const unsigned char *>(data), len);
 
-    send(sendme);
+    // send will append IP and ethernet headers, so store a copy before send()
     unacked.emplace(next_seq_to_send, sendme);
+    send(sendme);
     next_seq_to_send += len;
 }
 
 void TCPSession::send(PacketHeaderTCP &tcp) {
+    if (peer_window_size == 0 || (unacked.size() > NETWORKING_TCP_MAX_INITIAL_CONGESTION_WINDOW)) {
+        /*
+         * Since we're not asynchronous we can't hold this data until we get a
+         * window update, probe with a persist timer, or do real congestion
+         * delays. Instead lets just wait a bit and then try and send, and if
+         * the peer doesn't ack it we will retransmit later. Hopefully this is
+         * slow enough.
+         *
+         * It's messy to sleep the thread, but it's less messy than finding a
+         * way to block the caller while we schedule this write for later.
+         *
+         * A fixed timeout is not good congestion control.
+         */
+        std::this_thread::sleep_for(NETWORKING_TCP_CONGESTION_SEND_DELAY * unacked.count());
+    }
     net_tcp.send(*flow, tcp, this);
 }
 
 void TCPSession::send_rst() {
-    net_tcp.send_rst(*flow, *this);
+    PacketBuffer pb(PacketHeaderTCP::minimum_header_size());
+    PacketHeaderTCP rst(pb);
+
+    rst.build(flow->local_port, flow->remote_port, next_seq_to_send);
+    rst.rst(true);
+    rst.ack(true);
+    rst.ack_num = next_expected_seq;
+    last_sent_ack = next_expected_seq;
+
+    send(rst);
     state = CLOSED;
 }
 
@@ -92,6 +121,7 @@ void TCPSession::send_ack() {
     ack.build(flow->local_port, flow->remote_port, next_seq_to_send);
     ack.ack(true);
     ack.ack_num = next_expected_seq;
+    last_sent_ack = next_expected_seq;
 
     send(ack);
 }
@@ -103,6 +133,7 @@ void TCPSession::send_keepalive_ack() {
     ack.build(flow->local_port, flow->remote_port, last_received_ack - 1);
     ack.ack(true);
     ack.ack_num = next_expected_seq;
+    // Don't change last_sent_ack because we're not ACKing new data.
 
     send(ack);
 }
@@ -113,9 +144,10 @@ void TCPSession::send_fin() {
     PacketHeaderTCP fin(pb);
 
     fin.build(flow->local_port, flow->remote_port, next_seq_to_send);
+    fin.fin(true);
     fin.ack(true);
     fin.ack_num = next_expected_seq;
-    fin.fin(true);
+    last_sent_ack = next_expected_seq;
     
     send(fin);
     switch (state) {
@@ -139,16 +171,17 @@ void TCPSession::send_accept(const PacketHeaderTCP &tcp) {
     next_expected_seq = tcp.seq_num() + 1;
     stats.packets_sent++;
     last_recv_time = NetworkingTCPSteadyClock::now();
-    peer_window_size = peer_max_window_size = congestion_window = tcp.window_size(); // Scaling options TODO
+    peer_window_size = congestion_window = tcp.window_size(); // Scaling options TODO
     if (congestion_window > NETWORKING_TCP_MAX_INITIAL_CONGESTION_WINDOW) congestion_window = NETWORKING_TCP_MAX_INITIAL_CONGESTION_WINDOW;
 
     PacketBuffer pb(PacketHeaderTCP::minimum_header_size());
     PacketHeaderTCP syn_ack(pb);
 
     syn_ack.build(flow->local_port, flow->remote_port, next_seq_to_send++);
+    syn_ack.syn(true);
     syn_ack.ack(true);
     syn_ack.ack_num = next_expected_seq;
-    syn_ack.syn(true);
+    last_sent_ack = next_expected_seq;
 
     send(syn_ack);
     /*
@@ -171,21 +204,40 @@ unsigned int TCPSession::run_callback(TCPSessionEvent event, const PacketHeaderT
     }
 }
 
-void TCPSession::free_acked(uint32_t seq) {
-    // Doesn't handle wrap! TODO
+bool TCPSession::ack_is_valid(uint32_t unacked_seq, uint32_t ack) {
+    if (next_seq_to_send >= unacked_seq) {
+        // Sequence numbers haven't wrapped
+        if (unacked_seq <= ack && ack <= next_seq_to_send) return true;
+    } else {
+        // Sequence numbers have wrapped.
+        if (ack <= next_seq_to_send || ack >= unacked_seq) return true;
+    }
+
+    return false;
+}
+
+void TCPSession::process_ack(uint32_t ack) {
+    // Doesn't handle partially acknowledged packets. TODO
+    // Needs to be tested. TODO
+
+    uint32_t acked_byte = ack - 1;
+
     for(auto it = unacked.begin(); it != unacked.end();) {
-        if (it->first <= seq) {
+        uint32_t unacked_seq = it->first + it->second.data_size;
+        if (ack_is_valid(unacked_seq, acked_byte)) {
             it = unacked.erase(it);
-        } else {
+        } else if (unacked_seq > acked_byte) {
             break;
+        } else {
+            ++it;
         }
     }
 }
 
 /*
- * Note, we totally ignore both the PSH and URG flags. We deliver all data
- * in order to the callback. URG isn't well specified and is rarely used, so
- * we can implement support when we find a use case.
+ * Note, we totally ignore both the PSH and URG flags. We deliver all data in
+ * order to the callback. URG isn't well specified and is rarely used, so we
+ * can implement support when we find a use case.
  */
 void TCPSession::process(const PacketHeaderTCP &tcp) {
     unsigned int callback_op;
@@ -197,7 +249,7 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
 
     if (state == CLOSED) {
         // We shouldn't be receiving events on a closed connection.
-        net_tcp.send_rst(*flow, *this);
+        net_tcp.send_rst(*flow, tcp);
         net_tcp.stats.recevied_on_closed++;
         return;
     }
@@ -220,11 +272,18 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
             return;
 
         case LATER_IN_WINDOW:
-            if (tcp.ack()) free_acked(tcp.ack_num() - 1);
+            if (tcp.ack()) {
+                // An ack from the future!
+                if (tcp.ack() + tcp.data_size() >= next_seq_to_send) {
+                    send_rst();
+                    return;
+                }
+                process_ack(tcp.ack_num());
+                last_received_ack = tcp.ack_num();
+            }
             if (tcp.flags() != TCP_FLAG_ACK) { // More than just an empty ACK.
                 received_out_of_order.emplace(tcp.seq_num(), tcp);
             }
-            last_received_ack = tcp.ack_num();
             return;
 
         case NEXT_IN_WINDOW:
@@ -240,6 +299,9 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
     // TCP data is limited to 64k so the cast is safe.
     next_expected_seq += static_cast<uint32_t>(tcp.data_size());
     if (!tcp.data_size() && tcp.fin()) next_expected_seq++;
+
+    // See comments in send for how we handle zero windows.
+    peer_window_size = tcp.window_size();
     
     if (tcp.rst()) {
         state = CLOSED;
@@ -253,6 +315,7 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
                 state = CLOSED;
                 run_callback(CONNECTION_CLOSED, tcp);
             }
+            if (tcp.ack()) last_received_ack = tcp.ack_num();
             // Ignore anything else.
             return;
 
@@ -289,16 +352,24 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
                 send_rst();
             } else if (callback_op & NETWORKING_TCP_CALLBACK_WANT_FIN) {
                 send_fin();
-            } else if (tcp.data_size()) {
+            } else if (tcp.data_size() && last_sent_ack < tcp.seq_num() + tcp.data_size()) {
                 send_ack();
             }
             return;
             
         case ESTABLISHED:
-            callback_op = NETWORKING_TCP_CALLBACK_OK;
-            if (tcp.ack()) {
-                last_received_ack = tcp.ack_num();
+            if (!tcp.ack()) {
+                /*
+                 * Per RFC 793:
+                 * Once a connection is established this is always sent.
+                 * We could probably RST here, but Linux just ignores the packet
+                 * so let's try that.
+                 */
+                return;
             }
+            callback_op = NETWORKING_TCP_CALLBACK_OK;
+            process_ack(last_received_ack);
+            last_received_ack = tcp.ack_num();
 
             if (tcp.data_size()) {
                 callback_op |= run_callback(DATA, tcp);
@@ -317,9 +388,15 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
 
             // Data after a FIN? Ignore it.
             if (!tcp.fin()) {
-                // safe.
-                uint32_t next_target_seq = tcp.seq_num() + static_cast<uint32_t>(tcp.data_size());
-                auto found = received_out_of_order.find(next_target_seq);
+                // safe cast, data_size is limited to 64k
+                uint32_t ooo_target_seq = tcp.seq_num() + static_cast<uint32_t>(tcp.data_size());
+
+                /*
+                 * If we return from here after a rst or fin, we will eventually
+                 * clean out all of received_out_of_order when the connection is
+                 * torn down.
+                 */
+                auto found = received_out_of_order.find(ooo_target_seq);
                 while (found != received_out_of_order.end()) {
                     PacketHeaderTCP old_tcp(found->second.pb); // Already checked.
                     if (old_tcp.data_size()) callback_op |= run_callback(DATA, old_tcp);
@@ -341,14 +418,15 @@ void TCPSession::process(const PacketHeaderTCP &tcp) {
                         break;
                     }
 
-                    next_target_seq += old_tcp.data_size();
-                    found = received_out_of_order.find(next_target_seq);
+                    ooo_target_seq += old_tcp.data_size();
+                    received_out_of_order.erase(found);
+                    found = received_out_of_order.find(ooo_target_seq);
                 }
             }
 
             if (callback_op & NETWORKING_TCP_CALLBACK_WANT_FIN) {
                 send_fin();
-            } else if (tcp.data_size() || tcp.fin()) {
+            } else if ((tcp.data_size() || tcp.fin()) && last_sent_ack < tcp.seq_num() + tcp.data_size()) {
                 send_ack();
             }
             return;
@@ -395,6 +473,15 @@ void NetworkingTCP::timer_callback(NetworkingInputSteadyClockTime now) {
             if (session.state == SYN_RECEIVED) listen_port_aborted(*session.flow);
             it = ipv4_flows.erase(it);
         } else {
+            for(auto &pending : session.unacked) {
+                // This is not good congestion control.
+                if (now - pending.second.ts > NETWORKING_TCP_RETRANSMIT_TIMEOUT) {
+                    PacketBuffer pb(pending.second.pb);
+                    PacketHeaderTCP tcp(pb);
+                    session.send(tcp);
+                    pending.second.ts = now;
+                }
+            }
             ++it;
         }
     }
@@ -423,7 +510,7 @@ void NetworkingTCP::send(const NetworkFlowTCP &flow, PacketHeaderTCP &tcp, TCPSe
  * 3) Resetting any other incoming packet. In this case we use a sequence number
  *    of zero and actually ACK the data.
  */
-void NetworkingTCP::send_rst(const NetworkFlowTCP &flow, PacketHeaderTCP &tcp) {
+void NetworkingTCP::send_rst(const NetworkFlowTCP &flow, const PacketHeaderTCP &tcp) {
     uint32_t seq = 0;
     if (tcp.ack()) {
         seq = tcp.ack_num();
@@ -441,23 +528,6 @@ void NetworkingTCP::send_rst(const NetworkFlowTCP &flow, PacketHeaderTCP &tcp) {
     }
 
     send(flow, rst, nullptr);
-}
-
-void NetworkingTCP::send_rst(const NetworkFlowTCP &flow, TCPSession &session) {
-    uint32_t seq;
-
-    seq = session.next_seq_to_send++;
-    session.stats.packets_sent++;
-
-    PacketBuffer pb(PacketHeaderTCP::minimum_header_size());
-    PacketHeaderTCP rst(pb);
-
-    rst.build(flow.local_port, flow.remote_port, seq);
-    rst.rst(true);
-    rst.ack(true);
-    rst.ack_num = session.next_expected_seq;
-    
-    send(flow, rst, &session);
 }
 
 void NetworkingTCP::process(PacketHeaderIPv4 &ipv4) {

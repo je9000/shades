@@ -21,18 +21,33 @@ void on_terminate() {
     exit(1);
 }
 
-TCPSessionAction print_tcp(TCPSessionEvent event, const NetworkFlowTCP &flow, const TCPSession *session, const PacketHeaderTCP &tcp) {
-    std::cout << "Got TCP event " << event << "\n";
+#ifdef DEBUG_TCP_PACKETS
+bool print_debug_tcp(size_t callback_id, void *data, NetworkingInput &net, PacketHeader &ph) {
+    PacketHeaderTCP &tcp = dynamic_cast<PacketHeaderTCP &>(ph);
+    std::clog << tcp << "\n";
+    return true;
+}
+#endif
+
+TCPSessionAction print_tcp(TCPSessionEvent event, const NetworkFlowTCP &flow, TCPSession *session, const PacketHeaderTCP &tcp) {
+    //std::clog << "Got TCP event " << event << "\n";
     if (event == CONNECTION_CLOSING) return SESSION_FIN;
     if (event == DATA) {
         auto p = tcp.next_header_offset();
         std::string data((char *)p.data(), p.size());
-        std::cout << "Got data: '";
+        /*std::clog << "Got data: ";
+        auto flags = std::clog.flags();
+        std::clog << std::hex << std::setfill('0');
         for(char c : data) {
-            if (isprint(c)) std::cout << c;
-            else std::cout << static_cast<uint32_t>(c);
+            if (isgraph(c)) {
+                std::clog << c;
+            } else {
+                std::clog << "\\x" << std::setw(2) << static_cast<uint32_t>(c);
+            }
         }
-        std::cout << "'\n";
+        std::clog << '\n';
+        std::clog.flags(flags);*/
+        session->send_data(data);
     }
     return SESSION_OK;
 }
@@ -62,7 +77,7 @@ int main(int argc, const char *argv[]) {
 #endif
     network_init_command = "";
 #endif
-    
+
     int new_uid = 0, new_gid = 0;
 
     if (argc > 4) {
@@ -83,13 +98,18 @@ int main(int argc, const char *argv[]) {
 #endif
     }
 
-    Networking net(*netdriver.get(), {my_ip}, network_init_command);
+    NetworkingInput net_in(*netdriver.get());
+
+#ifdef DEBUG_TCP_PACKETS
+    net.get_input().register_callback(typeid(PacketHeaderTCP), print_debug_tcp);
+#endif
+
+    Networking net(net_in, {my_ip}, network_init_command);
     
     if (new_uid || new_gid) {
         if (setgid(new_gid) != 0 || setuid(new_uid) != 0) throw std::runtime_error("Failed to setuid/setgid!");
     }
-    
-    //net.input().register_callback(typeid(PacketHeaderICMPEcho), print_icmp);
+
     net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route), netdriver->mtu);
     net.tcp_layer.register_listener(PROTO_IPv4, 3389, print_tcp);
     

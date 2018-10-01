@@ -17,6 +17,10 @@ void NetworkingInput::unregister_timer_callback(const size_t id) {
     timer_callbacks.remove(id);
 }
 
+NetDriver &NetworkingInput::get_driver() {
+    return net_driver;
+}
+
 void NetworkingInput::run() {
     PacketBuffer recv_into;
     keep_running = true;
@@ -60,7 +64,7 @@ void NetworkingInput::process_one(PacketBuffer &recv_into) {
     catch (const std::exception &e) {
         std::cerr << "Dropping packet, callback exception: " << e.what() << "\n";
         StackTracePrinter<20> stp;
-        stp();
+        std::cerr << stp;
     }
 #endif
 }
