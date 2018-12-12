@@ -38,6 +38,7 @@ public:
 
     // This is valid when we receive a packet, but not necessarily when sending.
     HEADER_TYPE header_type = HEADER_UNKNOWN;
+    size_t packet_id = 0;
     
     PacketBuffer();
     PacketBuffer(size_t);

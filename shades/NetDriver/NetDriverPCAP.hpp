@@ -22,6 +22,8 @@ public:
     bool recv(PacketBuffer &, int);
     inline size_t header_size() { return pcap_header_size; }
     bool is_layer3_interface();
+
+    pcap_t *get_pcap();
 };
 
 #endif /* NetDriverPCAP_h */

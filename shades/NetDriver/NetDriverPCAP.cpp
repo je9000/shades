@@ -33,8 +33,6 @@ NetDriverPCAP::NetDriverPCAP(const std::string_view ifn) : NetDriver(ifn) {
             throw std::runtime_error("Unsupported pcap_datalink type");
     }
     
-    mtu = get_mtu();
-    
     int fd = pcap_get_selectable_fd(pcap);  // Should be closed automatically with pcap_close)
     if (!fd) throw std::runtime_error("pcap_get_selectable_fd");
     setup_socket_ready(fd);
@@ -147,6 +145,7 @@ bool NetDriverPCAP::recv(PacketBuffer &pb, int timeout) {
     
     if (header->caplen <= pcap_header_size) throw std::out_of_range("caplen too small for header");
     pb.copy_from(data + pcap_header_size, header->caplen - pcap_header_size, pb_header_type);
+    pb.packet_id = packet_count++;
 
 #ifdef DEBUG_PCAP_DROPS
     pcap_stat ps;
@@ -155,4 +154,8 @@ bool NetDriverPCAP::recv(PacketBuffer &pb, int timeout) {
 #endif
 
     return true;
+}
+
+pcap_t *NetDriverPCAP::get_pcap() {
+    return pcap;
 }

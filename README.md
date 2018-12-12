@@ -26,7 +26,16 @@ Shades supports Linux and OSX, and hopefully FreeBSD, NetBSD, and OpenBSD.
 
 # Examples
 
-To do! See main.cpp for now.
+## shadescap
+
+shadescap is sort of like tcpdump but built on shades. It uses shades for
+packet capture, parsing, and printing. It shows packets in a more readable (and
+verbose) format than tcpdump. It's definitely not a complete replacement.
+
+## other
+
+shades/main.cpp has some examples of using shades, but is more for debugging
+than as an example.
 
 # License
 

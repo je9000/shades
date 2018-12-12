@@ -10,6 +10,9 @@
 
 uint32_t NetDriver::get_mtu() {
     struct ifreq ifr;
+
+    if (mtu) return mtu;
+
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (!sock) throw std::system_error(errno, std::generic_category(), "socket");
     
@@ -21,8 +24,8 @@ uint32_t NetDriver::get_mtu() {
         throw std::system_error(errno, std::generic_category(), "ioctl");
     }
     close(sock);
-    
-    return ifr.ifr_mtu;
+    mtu = ifr.ifr_mtu;
+    return mtu;
 }
 
 void NetDriver::setup_socket_ready(int fd) {

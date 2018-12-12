@@ -27,6 +27,10 @@ public:
     
     virtual size_t header_size() const = 0;
     virtual std::unique_ptr<PacketHeader> recalculate_next_header() const;
+
+    inline size_t packet_id() const {
+        return pbo.backing_buffer().packet_id;
+    }
     
     inline size_t size() const {
         return pbo.size();

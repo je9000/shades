@@ -101,7 +101,7 @@ int main(int argc, const char *argv[]) {
     NetworkingInput net_in(*netdriver.get());
 
 #ifdef DEBUG_TCP_PACKETS
-    net.get_input().register_callback(typeid(PacketHeaderTCP), print_debug_tcp);
+    net_in.register_callback(typeid(PacketHeaderTCP), print_debug_tcp);
 #endif
 
     Networking net(net_in, {my_ip}, network_init_command);
@@ -110,10 +110,10 @@ int main(int argc, const char *argv[]) {
         if (setgid(new_gid) != 0 || setuid(new_uid) != 0) throw std::runtime_error("Failed to setuid/setgid!");
     }
 
-    net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route), netdriver->mtu);
+    net.ipv4_layer.routes.set(0, 0, IPv4Address(default_route), netdriver->get_mtu());
     net.tcp_layer.register_listener(PROTO_IPv4, 3389, print_tcp);
     
-    std::clog << "net is on " << netdriver->get_ifname() << ", hwaddr " << net.my_mac << ", IPv4 " << net.my_ip << ", MTU " << netdriver->mtu << "\n";
+    std::clog << "net is on " << netdriver->get_ifname() << ", hwaddr " << net.my_mac << ", IPv4 " << net.my_ip << ", MTU " << netdriver->get_mtu() << "\n";
     
     net.run();
 

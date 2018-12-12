@@ -12,15 +12,18 @@
  */
 
 std::unique_ptr<PacketHeader> PacketHeader::recalculate_next_header() const {
-    /*const PacketHeaderEthernet *eth;
-     const PacketHeaderIPv4 *ipv4;
-     
-     eth = dynamic_cast<const PacketHeaderEthernet *>(this);
-     if (eth) return eth->recalculate_next_header();
-     
-     ipv4 = dynamic_cast<const PacketHeaderIPv4 *>(this);
-     if (ipv4) return ipv4->recalculate_next_header();*/
-    
+    auto type = this->backing_buffer().header_type;
+
+    if (type == PacketBuffer::HEADER_ETHERNET) {
+        const PacketHeaderEthernet *eth = dynamic_cast<const PacketHeaderEthernet *>(this);
+        if (eth) return eth->recalculate_next_header();
+    } else if (type == PacketBuffer::HEADER_IPV4) {
+        const PacketHeaderIPv4 *ipv4 = dynamic_cast<const PacketHeaderIPv4 *>(this);
+        if (ipv4) return ipv4->recalculate_next_header();
+    } else if (type == PacketBuffer::HEADER_IPV6) {
+        // todo
+    }
+
     return nullptr;
 }
 
