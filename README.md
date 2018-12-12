@@ -29,8 +29,9 @@ Shades supports Linux and OSX, and hopefully FreeBSD, NetBSD, and OpenBSD.
 ## shadescap
 
 shadescap is sort of like tcpdump but built on shades. It uses shades for
-packet capture, parsing, and printing. It shows packets in a more readable (and
-verbose) format than tcpdump. It's definitely not a complete replacement.
+packet capture, parsing, and printing. It shows packet headers in a more
+readable (and verbose) format than tcpdump. It's not (yet?) a replacement for
+tcpdump.
 
 ## other
 

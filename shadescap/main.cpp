@@ -46,9 +46,13 @@ bool print_packet(size_t callback_id, void *data, NetworkingInput &net, PacketHe
 }
 
 void usage() {
-    std::cout << "shadescap: Like tcpdump but built with shades.\n";
-    std::cout << "Usage:\n";
-    std::cout << "shadescap [-h] [-i interface] [-Z username] [pcap filter]\n";
+    std::cout << "shadescap: Print network packet headers.\n\n";
+    std::cout << "usage: shadescap [-h] [-v] [-i interface] [-Z username] [pcap filter]\n";
+    std::cout << "-h             This help\n";
+    std::cout << "-v             Print ethernet headers (if available)\n";
+    std::cout << "-i interface   Capture on this interface (default: \"any\")\n";
+    std::cout << "-Z username    setuid to this user and setgid to user's default group\n";
+    std::cout << "[pcap filter]  Capture packets matching this filter; see man pcap-filter\n";
     exit(1);
 }
 
