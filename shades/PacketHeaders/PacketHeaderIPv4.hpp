@@ -133,7 +133,7 @@ public:
     }
     
     inline bool same_network(const IPv4Address &n1, const IPv4Address &n2) const {
-        uint8_t bits = (static_cast<uint64_t>(1) << mask) - 1;
+        uint32_t bits = static_cast<uint32_t>((static_cast<uint64_t>(1) << mask) - 1);
         return (n1.ip_int & bits) == (n2.ip_int & bits);
     }
     

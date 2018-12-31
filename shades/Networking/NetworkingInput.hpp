@@ -21,6 +21,7 @@
 #include <vector>
 #include <functional>
 #include <chrono>
+#include <atomic>
 
 #include "CallbackVector.hpp"
 #include "PacketHeaders.hpp"
@@ -43,7 +44,7 @@ private:
     std::unordered_map<std::type_index, CallbackVector<NetworkingInputCallback, NetworkingInput &, PacketHeader &>> packet_type_callbacks;
     CallbackVector<NetworkingTimerCallback, NetworkingInput &, NetworkingInputSteadyClockTime> timer_callbacks;
 public:
-    bool keep_running;
+    std::atomic<bool> keep_running; // Atomic so other threads can stop this one cleanly.
 
     NetworkingInput(NetDriver &nd) : net_driver(nd), last_packet_time(NetworkingInputSteadyClock::now()), keep_running(false) {}
 

@@ -6,8 +6,9 @@
 #include <iostream>
 #include <memory>
 #include <thread>
-#include <unordered_map>
+#include <map>
 #include <mutex>
+#include <chrono>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -24,7 +25,7 @@ enum REPLY_STATE {
     ARP_TIMEOUT = 2,
 };
 
-std::unordered_map<IPv4Address, enum REPLY_STATE> query_results;
+std::map<IPv4Address, enum REPLY_STATE> query_results;
 std::mutex query_results_mutex;
 
 /*
@@ -41,6 +42,7 @@ bool got_packet(size_t callback_id, void *data, NetworkingInput &net, PacketHead
     PacketHeaderICMP &echo_reply = dynamic_cast<PacketHeaderICMP &>(ph);
     std::lock_guard<std::mutex> guard(query_results_mutex);
 
+    // How do I get the IP?
     std::cout << "got one\n";
 
     return true;
@@ -74,6 +76,8 @@ void ping_sweep(Networking &net, const IPv4AddressAndMask &range) {
     for(IPv4Address ip(range.addr); range.contains(ip); ip.ip_int = htonl(ntohl(ip.ip_int) + 1)) {
         ping_ip(net, ip);
     }
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+    net.get_input().keep_running = false;
 }
 
 void usage() {
@@ -128,18 +132,39 @@ int main(int argc, const char *argv[]) {
 
     net_in.register_callback(typeid(PacketHeaderICMPEcho), got_packet);
 
+#if 0
     struct bpf_program bpf_filter;
     pcap_t *pcap = netdriver.get_pcap(); // borrowed
     if (pcap_compile(pcap, &bpf_filter, pcap_filter.c_str(), 1, PCAP_NETMASK_UNKNOWN) != 0 || pcap_setfilter(pcap, &bpf_filter) != 0) {
         pcap_perror(pcap, "");
         exit(1);
     }
+#endif
 
-    std::clog << "Listening on " << netdriver.get_ifname() << " for \"" << pcap_filter << "\"\n---\n";
+    std::clog << "Sending ping query to all of " << ip_range.as_string() << " from " << bind_to.as_string() << " on " << iface << "\n---\n";
 
     std::thread query_thread(ping_sweep, std::ref(net), std::ref(ip_range));
     net_in.run();
     query_thread.join();
 
-    return 0;
+    bool got_reply = false;
+    for (const auto &i : query_results) {
+        std::cout << i.first << " = " ;
+        switch (i.second) {
+            case UNKNOWN:
+                std::cout << "Stealth?\n";
+                break;
+            case ARP_TIMEOUT:
+                std::cout << "No reply\n";
+                break;
+            case REPLY:
+                std::cout << "Reply received\n";
+                got_reply = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return got_reply ? 0 : 1;
 }

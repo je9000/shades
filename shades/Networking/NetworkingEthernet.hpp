@@ -14,7 +14,7 @@
 #include "PacketHeaderARP.hpp"
 #include "PacketHeader.hpp"
 
-static const std::chrono::seconds ARP_QUERY_TIMEOUT(30); // seconds
+static const std::chrono::seconds ARP_QUERY_TIMEOUT(5); // seconds
 
 // Callbacks
 class NetworkingEthernet;

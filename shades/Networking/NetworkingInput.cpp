@@ -35,11 +35,9 @@ void NetworkingInput::check_timers() {
 }
 
 void NetworkingInput::process_one(PacketBuffer &recv_into) {
-    while(true) {
-        auto r = net_driver.recv(recv_into, NETWORKING_INPUT_TIMER_INTERVAL.count());
-        check_timers();
-        if (r) break;
-    }
+    auto r = net_driver.recv(recv_into, NETWORKING_INPUT_TIMER_INTERVAL.count());
+    check_timers();
+    if (!r) return; // timeout
 
     try {
         switch (recv_into.header_type) {
