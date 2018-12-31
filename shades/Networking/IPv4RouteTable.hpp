@@ -38,26 +38,25 @@ public:
         throw std::runtime_error("No route to host");
     }
 
-    inline void set(const IPv4Address &dest, size_t mask_bits, const IPv4Address &gw, uint32_t mtu) {
-        if (mask_bits > 32) throw std::out_of_range("Mask bits must be <= 32");
-        if (!gw) throw std::runtime_error("Invalid gateway");
-        if (mask_bits == 0) {
+    inline void set(const IPv4Address &dest, IPv4SubnetMask mask, const IPv4Address &gw, uint32_t mtu) {
+        if (mask.mask > 32) throw std::out_of_range("Mask bits must be <= 32");
+        if (mask.mask == 0) {
             default_route = {gw, mtu};
             return;
         }
-        auto masked_dest = dest.apply_mask_bits(mask_bits);
-        auto &table = routes_per_mask[mask_bits - 1];
+        auto masked_dest = dest.apply_mask_bits(mask.mask);
+        auto &table = routes_per_mask[mask.mask - 1];
         if (table.find(masked_dest) != table.end()) table.erase(masked_dest);
         table.insert({masked_dest, {gw, mtu}});
     }
     
-    inline void remove(const IPv4Address &dest, size_t mask_bits) {
-        if (mask_bits > 32) throw std::out_of_range("Mask bits must be <= 32");
-        if (mask_bits == 0) {
+    inline void remove(const IPv4Address &dest, IPv4SubnetMask mask) {
+        if (mask.mask > 32) throw std::out_of_range("Mask bits must be <= 32");
+        if (mask.mask == 0) {
             default_route.next_hop.ip_int = 0;
         } else {
-            auto masked_dest = dest.apply_mask_bits(mask_bits);
-            routes_per_mask[mask_bits - 1].erase(masked_dest);
+            auto masked_dest = dest.apply_mask_bits(mask.mask);
+            routes_per_mask[mask.mask - 1].erase(masked_dest);
         }
     }
 };

@@ -7,6 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		52080EA921D631BE00CF0E60 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52080EA821D631BE00CF0E60 /* main.cpp */; };
+		52080EAD21D631F700CF0E60 /* NetDriver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF50592143011F00BF37C4 /* NetDriver.cpp */; };
+		52080EAE21D631F700CF0E60 /* NetDriverPCAP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB5B21280A38004633C3 /* NetDriverPCAP.cpp */; };
+		52080EAF21D631F700CF0E60 /* NetDriverUTun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF5057212CDE4D00BF37C4 /* NetDriverUTun.cpp */; };
+		52080EB021D631F700CF0E60 /* PacketHeader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF5053212859E100BF37C4 /* PacketHeader.cpp */; };
+		52080EB121D631F700CF0E60 /* PacketHeaderARP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB5F21281BC5004633C3 /* PacketHeaderARP.cpp */; };
+		52080EB221D631F700CF0E60 /* PacketHeaderEthernet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB6121281C37004633C3 /* PacketHeaderEthernet.cpp */; };
+		52080EB321D631F700CF0E60 /* PacketHeaderICMP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB6321281E5E004633C3 /* PacketHeaderICMP.cpp */; };
+		52080EB421D631F700CF0E60 /* PacketHeaderIPv4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB6521281F5A004633C3 /* PacketHeaderIPv4.cpp */; };
+		52080EB521D631F700CF0E60 /* PacketHeaderTCP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504921284FB600BF37C4 /* PacketHeaderTCP.cpp */; };
+		52080EB621D631F700CF0E60 /* NextHeader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF505521285BBD00BF37C4 /* NextHeader.cpp */; };
+		52080EB721D631F700CF0E60 /* PacketBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF50512128562700BF37C4 /* PacketBuffer.cpp */; };
+		52080EB821D6337700CF0E60 /* PacketHeaderUDP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504B2128515E00BF37C4 /* PacketHeaderUDP.cpp */; };
+		52080EB921D9A79A00CF0E60 /* Networking.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504F212854AE00BF37C4 /* Networking.cpp */; };
+		52080EBA21D9A79A00CF0E60 /* NetworkingEthernet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F0272D2125D7D400223C1E /* NetworkingEthernet.cpp */; };
+		52080EBB21D9A79A00CF0E60 /* NetworkingInput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF504D2128520100BF37C4 /* NetworkingInput.cpp */; };
+		52080EBC21D9A79A00CF0E60 /* NetworkingIPv4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB592126F39A004633C3 /* NetworkingIPv4.cpp */; };
+		52080EBE21D9A7CE00CF0E60 /* NetworkingTCP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 524867C32147A67E00C2B34F /* NetworkingTCP.cpp */; };
+		52080EC321D9E5DE00CF0E60 /* OSNetwork.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52080EC221D9E5DE00CF0E60 /* OSNetwork.cpp */; };
 		523BFB582126F339004633C3 /* NetworkingEthernet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52F0272D2125D7D400223C1E /* NetworkingEthernet.cpp */; };
 		523BFB5A2126F39A004633C3 /* NetworkingIPv4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB592126F39A004633C3 /* NetworkingIPv4.cpp */; };
 		523BFB5C21280A38004633C3 /* NetDriverPCAP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 523BFB5B21280A38004633C3 /* NetDriverPCAP.cpp */; };
@@ -42,6 +61,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		52080EA421D631BE00CF0E60 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		5271D57E21B66C6A005684E1 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -63,6 +91,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		52080EA621D631BE00CF0E60 /* sweep */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = sweep; sourceTree = BUILT_PRODUCTS_DIR; };
+		52080EA821D631BE00CF0E60 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		52080EC021D9B06C00CF0E60 /* OSNetwork.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = OSNetwork.hpp; sourceTree = "<group>"; };
+		52080EC221D9E5DE00CF0E60 /* OSNetwork.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = OSNetwork.cpp; sourceTree = "<group>"; };
 		522CCDA820CCE3CC007968E7 /* PacketHeaderARP.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaderARP.hpp; sourceTree = "<group>"; };
 		522CCDAA20CD1C02007968E7 /* PacketHeaders.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = PacketHeaders.hpp; sourceTree = "<group>"; };
 		522CCDAC20CD1CB9007968E7 /* ARPTable.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ARPTable.hpp; sourceTree = "<group>"; };
@@ -113,6 +145,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		52080EA321D631BE00CF0E60 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5271D57D21B66C6A005684E1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -130,6 +169,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		52080EA721D631BE00CF0E60 /* sweep */ = {
+			isa = PBXGroup;
+			children = (
+				52080EA821D631BE00CF0E60 /* main.cpp */,
+			);
+			path = sweep;
+			sourceTree = "<group>";
+		};
 		522CCDA920CD1BD0007968E7 /* PacketHeaders */ = {
 			isa = PBXGroup;
 			children = (
@@ -199,6 +246,7 @@
 			children = (
 				5288971C20BE418700076254 /* shades */,
 				5271D58121B66C6A005684E1 /* shadescap */,
+				52080EA721D631BE00CF0E60 /* sweep */,
 				5288971B20BE418700076254 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -208,6 +256,7 @@
 			children = (
 				5288971A20BE418700076254 /* shades */,
 				5271D58021B66C6A005684E1 /* shadescap */,
+				52080EA621D631BE00CF0E60 /* sweep */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -231,6 +280,8 @@
 				524867C2214780AC00C2B34F /* CallbackVector.hpp */,
 				5288972620BEA9B200076254 /* HexDump.hpp */,
 				52847C6620BFFEF1005E536D /* InetChecksum.hpp */,
+				52080EC021D9B06C00CF0E60 /* OSNetwork.hpp */,
+				52080EC221D9E5DE00CF0E60 /* OSNetwork.cpp */,
 				52847C6820C14C2B005E536D /* PacketBuffer.hpp */,
 				52AF50512128562700BF37C4 /* PacketBuffer.cpp */,
 				52F73A7620DE5981000A0467 /* PacketQueue.hpp */,
@@ -242,6 +293,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		52080EA521D631BE00CF0E60 /* sweep */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 52080EAC21D631BE00CF0E60 /* Build configuration list for PBXNativeTarget "sweep" */;
+			buildPhases = (
+				52080EA221D631BE00CF0E60 /* Sources */,
+				52080EA321D631BE00CF0E60 /* Frameworks */,
+				52080EA421D631BE00CF0E60 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = sweep;
+			productName = sweep;
+			productReference = 52080EA621D631BE00CF0E60 /* sweep */;
+			productType = "com.apple.product-type.tool";
+		};
 		5271D57F21B66C6A005684E1 /* shadescap */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5271D58621B66C6A005684E1 /* Build configuration list for PBXNativeTarget "shadescap" */;
@@ -285,6 +353,9 @@
 				LastUpgradeCheck = 0940;
 				ORGANIZATIONNAME = "John Eaglesham";
 				TargetAttributes = {
+					52080EA521D631BE00CF0E60 = {
+						CreatedOnToolsVersion = 10.1;
+					};
 					5271D57F21B66C6A005684E1 = {
 						CreatedOnToolsVersion = 10.1;
 					};
@@ -307,11 +378,38 @@
 			targets = (
 				5288971920BE418700076254 /* shades */,
 				5271D57F21B66C6A005684E1 /* shadescap */,
+				52080EA521D631BE00CF0E60 /* sweep */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		52080EA221D631BE00CF0E60 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52080EB121D631F700CF0E60 /* PacketHeaderARP.cpp in Sources */,
+				52080EA921D631BE00CF0E60 /* main.cpp in Sources */,
+				52080EB521D631F700CF0E60 /* PacketHeaderTCP.cpp in Sources */,
+				52080EC321D9E5DE00CF0E60 /* OSNetwork.cpp in Sources */,
+				52080EB421D631F700CF0E60 /* PacketHeaderIPv4.cpp in Sources */,
+				52080EB821D6337700CF0E60 /* PacketHeaderUDP.cpp in Sources */,
+				52080EBC21D9A79A00CF0E60 /* NetworkingIPv4.cpp in Sources */,
+				52080EBA21D9A79A00CF0E60 /* NetworkingEthernet.cpp in Sources */,
+				52080EAF21D631F700CF0E60 /* NetDriverUTun.cpp in Sources */,
+				52080EB621D631F700CF0E60 /* NextHeader.cpp in Sources */,
+				52080EB221D631F700CF0E60 /* PacketHeaderEthernet.cpp in Sources */,
+				52080EB721D631F700CF0E60 /* PacketBuffer.cpp in Sources */,
+				52080EAD21D631F700CF0E60 /* NetDriver.cpp in Sources */,
+				52080EAE21D631F700CF0E60 /* NetDriverPCAP.cpp in Sources */,
+				52080EBB21D9A79A00CF0E60 /* NetworkingInput.cpp in Sources */,
+				52080EB921D9A79A00CF0E60 /* Networking.cpp in Sources */,
+				52080EBE21D9A7CE00CF0E60 /* NetworkingTCP.cpp in Sources */,
+				52080EB021D631F700CF0E60 /* PacketHeader.cpp in Sources */,
+				52080EB321D631F700CF0E60 /* PacketHeaderICMP.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5271D57C21B66C6A005684E1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -361,6 +459,33 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		52080EAA21D631BE00CF0E60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		52080EAB21D631BE00CF0E60 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		5271D58421B66C6A005684E1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -373,7 +498,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -385,7 +509,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -450,6 +573,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "-lpcap";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -504,6 +628,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_LDFLAGS = "-lpcap";
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -524,7 +649,6 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = YES;
 				GCC_WARN_UNUSED_LABEL = YES;
 				LD_NO_PIE = YES;
-				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -545,7 +669,6 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = YES;
 				GCC_WARN_UNUSED_LABEL = YES;
 				LD_NO_PIE = YES;
-				OTHER_LDFLAGS = "-lpcap";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 			};
@@ -554,6 +677,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		52080EAC21D631BE00CF0E60 /* Build configuration list for PBXNativeTarget "sweep" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52080EAA21D631BE00CF0E60 /* Debug */,
+				52080EAB21D631BE00CF0E60 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		5271D58621B66C6A005684E1 /* Build configuration list for PBXNativeTarget "shadescap" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -1,17 +1,8 @@
 #include "Networking.hpp"
+#include "OSNetwork.hpp"
 
-#include <netinet/in_systm.h>
-#include <ifaddrs.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
-#ifdef __linux__
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#else
-#include <net/if_dl.h>
-#endif
 
 Networking::Networking(NetworkingInput &ni, const IPv4AddressAndMask my_address_and_mask, const std::string_view init_command) :
     net_in(ni),
@@ -24,6 +15,9 @@ Networking::Networking(NetworkingInput &ni, const IPv4AddressAndMask my_address_
     // assign ip? dhcp?
     my_subnet_mask = my_address_and_mask.mask;
     my_ip = my_address_and_mask.addr;
+
+    IPv4Address all_zero_ip(0);
+    ipv4_layer.routes.set(my_ip, my_subnet_mask, all_zero_ip, ni.get_driver().get_mtu());
     
     run_init_command(init_command);
 
@@ -71,52 +65,10 @@ NetworkingInput &Networking::get_input() {
     return net_in;
 }
 
-#ifdef SIOCGIFHWADDR
-EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
-    int fd;
-    struct ifreq ifr;
-    EthernetAddress ea;
-    
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) throw std::runtime_error("Failed to open socket");
-    
-    ifr.ifr_addr.sa_family = AF_INET;
-    strncpy(ifr.ifr_name, ifn.data(), IFNAMSIZ - 1);
-    
-    if (ioctl(fd, SIOCGIFHWADDR, &ifr) == -1) {
-        close(fd);
-        throw std::runtime_error(std::string("Failed to get ethernet address for ") + ifn.data());
-    }
-    close(fd);
-    
-    memcpy(ea.data(), ifr.ifr_hwaddr.sa_data, ea.size());
-    return ea;
+EthernetAddress Networking::get_interface_addr(const std::string &ifn) {
+    auto ifs = OSNetwork::get_interfaces();
+    return ifs->at(ifn).ethernet_address;
 }
-#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__APPLE__)
-EthernetAddress Networking::get_interface_addr(const std::string_view ifn) {
-    struct ifaddrs *ifap;
-    EthernetAddress ea;
-    
-    if (getifaddrs(&ifap) == 0) {
-        struct ifaddrs *p;
-        for (p = ifap; p; p = p->ifa_next) {
-            if ((p->ifa_addr->sa_family == AF_LINK) && (p->ifa_name == ifn)) {
-                if (p->ifa_addr->sa_len < sizeof(struct sockaddr_dl)) throw std::runtime_error("sa_len value unexpected!");
-                struct sockaddr_dl *sdp = static_cast<struct sockaddr_dl *>(malloc(p->ifa_addr->sa_len)); // Don't alias, just copy.
-                if (!sdp) throw std::bad_alloc();
-                memcpy(sdp, p->ifa_addr, sizeof(struct sockaddr_dl)); // Avoid aliasing
-                memcpy(ea.data(), sdp->sdl_data + sdp->sdl_nlen, ea.size());
-                freeifaddrs(ifap);
-                free(sdp);
-                return ea;
-            }
-        }
-        freeifaddrs(ifap);
-    }
-    throw std::runtime_error(std::string("Failed to get ethernet address for ") + ifn.data());
-}
-#else
-#error Do not know how to get MAC address on this platform.
-#endif
 
 void Networking::run_init_command(const std::string_view init_command) {
     if (init_command.empty()) return;

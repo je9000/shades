@@ -30,6 +30,7 @@ private:
 public:
     ARPTable arp_table;
     Networking &networking;
+    bool silent = false;
     
     NetworkingEthernet(Networking &);
     

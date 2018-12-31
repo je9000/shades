@@ -40,7 +40,7 @@ public:
     
     NetworkingInput &get_input();
     
-    EthernetAddress get_interface_addr(const std::string_view);
+    EthernetAddress get_interface_addr(const std::string &);
     
     void run_init_command(const std::string_view);
 };

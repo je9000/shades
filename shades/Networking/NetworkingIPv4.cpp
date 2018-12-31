@@ -158,11 +158,10 @@ bool NetworkingIPv4::possibly_reassemble(PacketHeaderIPv4 &packet) {
 void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto, PacketBuffer &pb) {
     size_t data_size = pb.size();
     size_t ip_header_size = PacketHeaderTCP::minimum_header_size();
-    routes.get(dest);
+    auto dest_info = routes.get(dest);
     
     pb.take_reserved_space(ip_header_size);
     
-    auto dest_info = routes.get(dest);
     auto target_data_mtu = dest_info.mtu - ip_header_size;
     if (data_size > target_data_mtu) {
         auto next_id = ip_id_counter.get_next_id();
@@ -211,7 +210,7 @@ void NetworkingIPv4::send(const IPv4Address &dest, const IPPROTO::IPPROTO proto,
 }
 
 bool NetworkingIPv4::icmp_echo_callback(NetworkingIPv4 &nv4, PacketHeaderIPv4 &ipv4) {
-    if (ipv4.protocol() != IPPROTO::ICMP) return true;
+    if (silent || !networking.my_ip.ip_int || ipv4.protocol() != IPPROTO::ICMP) return true;
     PacketHeaderICMP incoming_icmp(ipv4.next_header_offset());
     if (incoming_icmp.type() != ICMP::ECHO) return true;
     PacketHeaderICMPEcho incoming_echo(incoming_icmp.next_header_offset());

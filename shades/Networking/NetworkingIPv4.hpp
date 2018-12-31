@@ -150,6 +150,7 @@ private:
     void timer_callback(NetworkingIPv4SteadyClockTime);
 public:
     IPv4RouteTable routes;
+    bool silent = false;
     
     NetworkingIPv4(Networking &);
     Networking &get_network();

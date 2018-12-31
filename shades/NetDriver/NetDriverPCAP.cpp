@@ -76,7 +76,7 @@ void NetDriverPCAP::send(PacketBuffer &pb, size_t len) {
         memcpy(pb.data(), &ip_version, sizeof(ip_version));
     }
     auto r = pcap_inject(pcap, pb.data(), send_len);
-    if (r != send_len) throw std::runtime_error("Unable to send all data");
+    if (r != send_len) throw std::runtime_error("Unable to send all data: " + std::string(pcap_geterr(pcap)));
 }
 
 PacketBuffer::HEADER_TYPE NetDriverPCAP::guess_loop_header_type(const u_char *data) {

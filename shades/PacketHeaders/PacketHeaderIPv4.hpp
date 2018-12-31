@@ -132,12 +132,12 @@ public:
         mask = b;
     }
     
-    inline bool same_network(const IPv4Address &n1, const IPv4Address &n2) {
+    inline bool same_network(const IPv4Address &n1, const IPv4Address &n2) const {
         uint8_t bits = (static_cast<uint64_t>(1) << mask) - 1;
         return (n1.ip_int & bits) == (n2.ip_int & bits);
     }
     
-    inline bool operator==(const IPv4SubnetMask &other) {
+    inline bool operator==(const IPv4SubnetMask &other) const {
         return mask == other.mask;
     }
     
@@ -149,17 +149,18 @@ public:
     IPv4Address addr;
     IPv4SubnetMask mask;
 
+    IPv4AddressAndMask() : addr(0), mask(0) {}
     IPv4AddressAndMask(const IPv4Address a, const IPv4SubnetMask m = 32) : addr(a), mask(m) {}
     IPv4AddressAndMask(const std::string_view am) { assign(am); }
     inline void operator=(const std::string_view am) { assign(am); }
         
     void assign(const std::string_view);
     
-    inline bool operator==(const IPv4AddressAndMask &other) {
+    inline bool operator==(const IPv4AddressAndMask &other) const {
         return (addr == other.addr && mask == other.mask);
     }
     
-    inline bool contains(const IPv4Address &other) {
+    inline bool contains(const IPv4Address &other) const {
         return mask.same_network(addr, other);
     }
     

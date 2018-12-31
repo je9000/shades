@@ -1,3 +1,17 @@
+/*
+
+ NetworkingInput
+
+ NetworkingInput is a layer of abstraction between the NetDriver and packet
+ processing code. NetworkingInput is designed to contain the "main loop",
+ reading packets from te NetDriver and calling the appropriate callback
+ functions. Ethernet/IP/etc should be built on top of NetworkingInput.
+
+ NetworkingInput also provides periodic timer callbacks.
+
+
+*/
+
 #ifndef NetworkingInput_h
 #define NetworkingInput_h
 
@@ -45,6 +59,7 @@ public:
 
     bool process_ethernet(PacketBufferOffset);
     bool process_ipv4(PacketBufferOffset);
+    //bool process_ipv6(PacketBufferOffset);
 };
 
 #endif /* NetworkingInput_h */

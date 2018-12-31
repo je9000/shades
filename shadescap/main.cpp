@@ -14,13 +14,7 @@
 #include "Networking.hpp"
 #include "PacketHeaders.hpp"
 #include "PacketQueue.hpp"
-#include "StackTracePrinter.hpp"
 
-void on_terminate() {
-    StackTracePrinter<50> stp;
-    std::clog << stp;
-    exit(1);
-}
 /*
  * Some interface types will get ethernet packets and some will only get IP.
  * If get an IP packet on an interface that captures ethernet (and above),
@@ -57,10 +51,6 @@ void usage() {
 }
 
 int main(int argc, const char *argv[]) {
-#ifndef DEBUG
-    std::set_terminate(on_terminate);
-#endif
-
     std::string iface = "any";
     std::string pcap_filter;
     bool capture_eth = false;
@@ -98,6 +88,7 @@ int main(int argc, const char *argv[]) {
             break;
         }
     }
+
     NetDriverPCAP netdriver(iface);
     NetworkingInput net_in(netdriver);
 

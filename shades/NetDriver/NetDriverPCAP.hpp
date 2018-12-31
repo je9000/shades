@@ -9,7 +9,7 @@
 class NetDriverPCAP : public NetDriver {
 private:
     pcap_t *pcap = nullptr;
-    char error_buffer[PCAP_ERRBUF_SIZE];
+    char error_buffer[PCAP_ERRBUF_SIZE]; // Not thread safe
     int datalink_header = PacketBuffer::HEADER_UNKNOWN;
     size_t pcap_header_size = 0;
     

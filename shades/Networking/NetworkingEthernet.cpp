@@ -54,7 +54,7 @@ void NetworkingEthernet::arp_callback(PacketHeaderEthernet &eth) {
     if (arp.oper() == ARP::REPLY) {
         arp_table.insert_or_assign(arp.sender_ip(), arp.sender_mac());
     } else if (arp.oper() == ARP::REQUEST) {
-        if (arp.target_ip() == networking.my_ip) {
+        if (!silent && networking.my_ip && arp.target_ip() == networking.my_ip) {
             arp_table.insert_or_assign(arp.sender_ip(), arp.sender_mac());
             
             PacketBuffer pb;
