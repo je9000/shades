@@ -33,6 +33,11 @@ packet capture, parsing, and printing. It shows packet headers in a more
 readable (and verbose) format than tcpdump. It's not (yet?) a replacement for
 tcpdump.
 
+## sweep
+
+sweep is a simple tool for pinging a bunch of IPs. It's not fast because of the
+synchronous nature of shades, but it works and is a good example.
+
 ## other
 
 shades/main.cpp has some examples of using shades, but is more for debugging

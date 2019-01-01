@@ -21,27 +21,39 @@ enum REPLY_STATE {
     UNKNOWN = 0,
     REPLY = 1,
     ARP_TIMEOUT = 2,
+    STEALTH = 3,
 };
 
 std::map<IPv4Address, enum REPLY_STATE> query_results;
-std::mutex query_results_mutex;
 
-/*
- * Some interface types will get ethernet packets and some will only get IP.
- * If get an IP packet on an interface that captures ethernet (and above),
- * our callback will be called twice (once for ethernet and once for IP). We
- * can use the packet_id to avoid printing the packet twice.
- */
 bool got_packet(size_t callback_id, void *data, NetworkingInput &net, PacketHeader &ph) {
-    static size_t last_packet_id = SIZE_T_MAX; // Pick a default value that's not the same as the first packet id
+    PacketHeaderICMP &icmp = dynamic_cast<PacketHeaderICMP &>(ph);
+    if (icmp.type() != ICMP::ECHOREPLY || icmp.code() != 0) return true;
 
-    if (ph.packet_id() == last_packet_id) return true;
+    PacketHeaderICMPEcho echo(icmp.next_header_offset());
+    if (echo.seq() != 1|| echo.ident() != 1) return true;
 
-    PacketHeaderICMP &echo_reply = dynamic_cast<PacketHeaderICMP &>(ph);
-    std::lock_guard<std::mutex> guard(query_results_mutex);
+    IPv4Address source_ip;
 
-    // How do I get the IP?
-    std::cout << "got one\n";
+    /*
+     PCAP interfaces could be layer 2 or layer 3, and there's no API to walk
+     "up" the packet chain, so we have to start at the top and walk back down.
+     */
+    if (ph.backing_buffer().header_type == PacketBuffer::HEADER_ETHERNET) {
+        PacketHeaderEthernet eth(ph.backing_buffer());
+        PacketHeaderIPv4 ipv4(eth.next_header_offset());
+        source_ip = ipv4.source();
+    } else if (ph.backing_buffer().header_type == PacketBuffer::HEADER_IPV4) {
+        PacketHeaderIPv4 ipv4(ph.backing_buffer());
+        source_ip = ipv4.source();
+    }
+
+    if (!source_ip) {
+        // We shouldn't get here.
+        return true;
+    }
+
+    query_results[source_ip] = REPLY;
 
     return true;
 }
@@ -64,8 +76,9 @@ void ping_ip(Networking &net, const IPv4Address &dest) {
 
     try {
         net.ipv4_layer->send(dest, IPPROTO::ICMP, pb);
+        query_results[dest] = STEALTH;
     } catch (...) {
-        query_results.emplace(dest, ARP_TIMEOUT);
+        query_results[dest] = ARP_TIMEOUT;
     }
 }
 
@@ -87,7 +100,7 @@ int main(int argc, const char *argv[]) {
             usage();
         } else if (!strcmp(argv[i], "-p")) {
             ip_range = argv[i + 1];
-            pcap_filter = "icmp and src net " + ip_range.as_string();
+            pcap_filter = "arp or (icmp and src net " + ip_range.as_string() + ")";
             i++;
         } else {
             usage();
@@ -119,8 +132,10 @@ int main(int argc, const char *argv[]) {
     net.eth_layer.silent = true;
     net.ipv4_layer->silent = true;
 
-    net_in.register_callback(typeid(PacketHeaderICMPEcho), got_packet);
+    // Don't currently trigger callbacks for ICMP Echo, so use ICMP
+    net_in.register_callback(typeid(PacketHeaderICMP), got_packet);
 
+    // This is optional but speeds things up on a busy host.
     struct bpf_program bpf_filter;
     pcap_t *pcap = netdriver.get_pcap(); // borrowed
     if (pcap_compile(pcap, &bpf_filter, pcap_filter.c_str(), 1, PCAP_NETMASK_UNKNOWN) != 0 || pcap_setfilter(pcap, &bpf_filter) != 0) {
@@ -136,7 +151,7 @@ int main(int argc, const char *argv[]) {
     }
 
     auto start = std::chrono::steady_clock::now();
-    while(std::chrono::steady_clock::now() - start < std::chrono::seconds(5)) {
+    while(std::chrono::steady_clock::now() - start < std::chrono::seconds(2)) {
         net.process_one();
     }
 
@@ -145,6 +160,9 @@ int main(int argc, const char *argv[]) {
         std::cout << i.first << " = " ;
         switch (i.second) {
             case UNKNOWN:
+                std::cout << "Unknown\n"; // Shouldn't get here
+                break;
+            case STEALTH:
                 std::cout << "Stealth?\n";
                 break;
             case ARP_TIMEOUT:
