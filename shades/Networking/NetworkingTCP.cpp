@@ -532,7 +532,7 @@ void NetworkingTCP::send_rst(const NetworkFlowTCP &flow, const PacketHeaderTCP &
 
 void NetworkingTCP::process(PacketHeaderIPv4 &ipv4) {
     //if (ipv4.source() == net4.get_network().my_ip) return; // Don't process outgoing packets.
-    if (ipv4.dest() != net4->get_network().my_ip) return; // Make sure this is destined for me. An additional promiscuous check I suppose.
+    if (net4->get_network().my_ip && ipv4.dest() != net4->get_network().my_ip) return; // Make sure this is destined for me. An additional promiscuous check I suppose.
     
     PacketHeaderTCP tcp(ipv4.next_header_offset());
     tcp.check(ipv4.source(), ipv4.dest());

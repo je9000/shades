@@ -140,6 +140,10 @@ public:
     inline bool operator==(const IPv4SubnetMask &other) const {
         return mask == other.mask;
     }
+
+    inline operator bool() const {
+        return mask != 0;
+    }
     
     std::string as_string() const;
 };
@@ -166,6 +170,10 @@ public:
     
     inline std::string as_string() const {
         return addr.as_string() + '/' + std::to_string(mask.mask);
+    }
+
+    inline operator bool() const {
+        return addr && mask;
     }
 };
 

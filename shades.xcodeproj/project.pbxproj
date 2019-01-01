@@ -58,6 +58,7 @@
 		52AF505621285BBD00BF37C4 /* NextHeader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF505521285BBD00BF37C4 /* NextHeader.cpp */; };
 		52AF5058212CDE4D00BF37C4 /* NetDriverUTun.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF5057212CDE4D00BF37C4 /* NetDriverUTun.cpp */; };
 		52AF505A2143011F00BF37C4 /* NetDriver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52AF50592143011F00BF37C4 /* NetDriver.cpp */; };
+		52D8975521DB32980049399D /* OSNetwork.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52080EC221D9E5DE00CF0E60 /* OSNetwork.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -438,6 +439,7 @@
 				52AF5054212859E100BF37C4 /* PacketHeader.cpp in Sources */,
 				52AF5058212CDE4D00BF37C4 /* NetDriverUTun.cpp in Sources */,
 				52AF50522128562700BF37C4 /* PacketBuffer.cpp in Sources */,
+				52D8975521DB32980049399D /* OSNetwork.cpp in Sources */,
 				52AF504A21284FB600BF37C4 /* PacketHeaderTCP.cpp in Sources */,
 				52AF505A2143011F00BF37C4 /* NetDriver.cpp in Sources */,
 				523BFB5A2126F39A004633C3 /* NetworkingIPv4.cpp in Sources */,

@@ -4,6 +4,7 @@
 #include <functional>
 #include <chrono>
 #include <string_view>
+#include <memory>
 
 #include "NetworkingInput.hpp"
 #include "NetDriver.hpp"
@@ -12,6 +13,13 @@
 #include "NetworkingEthernet.hpp"
 #include "NetworkingIPv4.hpp"
 #include "NetworkingTCP.hpp"
+
+enum NetworkingLayers {
+    //UNSPECIFIED = 0,
+    ETHERNET = 1,
+    IP = 2,
+    TCP = 3
+};
 
 class Networking {
 protected:
@@ -25,10 +33,11 @@ public:
     IPv4Address my_ip;
     IPv4SubnetMask my_subnet_mask;
     NetworkingEthernet eth_layer;
-    NetworkingIPv4 ipv4_layer;
-    NetworkingTCP tcp_layer;
+    std::unique_ptr<NetworkingIPv4> ipv4_layer;
+    std::unique_ptr<NetworkingTCP> tcp_layer;
 
-    Networking(NetworkingInput &, const IPv4AddressAndMask, const std::string_view = "");
+    Networking(NetworkingInput &, const NetworkingLayers, const std::string_view = "");
+    Networking(NetworkingInput &, const NetworkingLayers, const IPv4AddressAndMask &, const std::string_view = "");
 
     // Implements ethernet promiscuous mode.
     bool ethernet_callback(PacketHeader &);

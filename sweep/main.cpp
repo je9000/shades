@@ -65,14 +65,14 @@ void ping_ip(Networking &net, const IPv4Address &dest) {
     icmp.update_checksum();
 
     try {
-        net.ipv4_layer.send(dest, IPPROTO::ICMP, pb);
+        //net.ipv4_layer.send(dest, IPPROTO::ICMP, pb);
     } catch (...) {
         std::lock_guard<std::mutex> guard(query_results_mutex);
         query_results.emplace(dest, ARP_TIMEOUT);
     }
 }
 
-void ping_sweep(Networking &net, const IPv4AddressAndMask &range) {
+void ping_sweep(Networking &net, const IPv4AddressAndMask range) {
     for(IPv4Address ip(range.addr); range.contains(ip); ip.ip_int = htonl(ntohl(ip.ip_int) + 1)) {
         ping_ip(net, ip);
     }
@@ -125,10 +125,10 @@ int main(int argc, const char *argv[]) {
     NetDriverPCAP netdriver(iface);
     NetworkingInput net_in(netdriver);
 
-    Networking net(net_in, bind_to);
+    Networking net(net_in, NetworkingLayers::IP, bind_to);
 
     net.eth_layer.silent = true;
-    net.ipv4_layer.silent = true;
+    net.ipv4_layer->silent = true;
 
     net_in.register_callback(typeid(PacketHeaderICMPEcho), got_packet);
 
@@ -143,7 +143,7 @@ int main(int argc, const char *argv[]) {
 
     std::clog << "Sending ping query to all of " << ip_range.as_string() << " from " << bind_to.as_string() << " on " << iface << "\n---\n";
 
-    std::thread query_thread(ping_sweep, std::ref(net), std::ref(ip_range));
+    std::thread query_thread(ping_sweep, std::ref(net), ip_range);
     net_in.run();
     query_thread.join();
 
