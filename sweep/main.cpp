@@ -5,9 +5,7 @@
 
 #include <iostream>
 #include <memory>
-#include <thread>
 #include <map>
-#include <mutex>
 #include <chrono>
 
 #include <unistd.h>
@@ -65,19 +63,10 @@ void ping_ip(Networking &net, const IPv4Address &dest) {
     icmp.update_checksum();
 
     try {
-        //net.ipv4_layer.send(dest, IPPROTO::ICMP, pb);
+        net.ipv4_layer->send(dest, IPPROTO::ICMP, pb);
     } catch (...) {
-        std::lock_guard<std::mutex> guard(query_results_mutex);
         query_results.emplace(dest, ARP_TIMEOUT);
     }
-}
-
-void ping_sweep(Networking &net, const IPv4AddressAndMask range) {
-    for(IPv4Address ip(range.addr); range.contains(ip); ip.ip_int = htonl(ntohl(ip.ip_int) + 1)) {
-        ping_ip(net, ip);
-    }
-    std::this_thread::sleep_for(std::chrono::seconds(4));
-    net.get_input().keep_running = false;
 }
 
 void usage() {
@@ -132,20 +121,24 @@ int main(int argc, const char *argv[]) {
 
     net_in.register_callback(typeid(PacketHeaderICMPEcho), got_packet);
 
-#if 0
     struct bpf_program bpf_filter;
     pcap_t *pcap = netdriver.get_pcap(); // borrowed
     if (pcap_compile(pcap, &bpf_filter, pcap_filter.c_str(), 1, PCAP_NETMASK_UNKNOWN) != 0 || pcap_setfilter(pcap, &bpf_filter) != 0) {
         pcap_perror(pcap, "");
         exit(1);
     }
-#endif
 
     std::clog << "Sending ping query to all of " << ip_range.as_string() << " from " << bind_to.as_string() << " on " << iface << "\n---\n";
 
-    std::thread query_thread(ping_sweep, std::ref(net), ip_range);
-    net_in.run();
-    query_thread.join();
+    for(IPv4Address ip(ip_range.addr); ip_range.contains(ip); ip.ip_int = htonl(ntohl(ip.ip_int) + 1)) {
+        ping_ip(net, ip);
+        net.process_one();
+    }
+
+    auto start = std::chrono::steady_clock::now();
+    while(std::chrono::steady_clock::now() - start < std::chrono::seconds(5)) {
+        net.process_one();
+    }
 
     bool got_reply = false;
     for (const auto &i : query_results) {

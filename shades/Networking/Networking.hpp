@@ -46,6 +46,7 @@ public:
     bool ipv4_callback(PacketHeader &);
 
     void run();
+    void process_one();
     
     NetworkingInput &get_input();
     

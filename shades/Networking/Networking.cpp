@@ -25,20 +25,8 @@ Networking::Networking(NetworkingInput &ni, const NetworkingLayers layers, const
 }
 
 Networking::Networking(NetworkingInput &ni, const NetworkingLayers layers, const IPv4AddressAndMask &my_address_and_mask, const std::string_view init_command) :
-    net_in(ni),
-    promiscuous(false),
-    net_driver(ni.get_driver()),
-    eth_layer(*this)
+    Networking(ni, ETHERNET, init_command)
 {
-    run_init_command(init_command);
-
-    if (!net_driver.is_layer3_interface()) {
-        my_mac = get_interface_addr(net_driver.get_ifname());
-        net_in.register_callback(typeid(PacketHeaderEthernet),
-                                 [this](size_t, void *d, NetworkingInput &, PacketHeader &ph) { return ethernet_callback(ph); }
-                                 );
-    }
-
     if (layers == TCP || layers == IP) {
         ipv4_layer = std::make_unique<NetworkingIPv4>(*this);
 
@@ -75,15 +63,19 @@ bool Networking::ipv4_callback(PacketHeader &ph) {
 }
 
 void Networking::run() {
-    PacketBuffer recv_into;
     net_in.keep_running = true;
     while(net_in.keep_running) {
-        if (auto *buf = packet_queue.get_readable()) {
-            net_in.process_one(*buf);
-            packet_queue.put_writable(buf); // We're done with it.
-        } else {
-            net_in.process_one(recv_into);
-        }
+        process_one();
+    }
+}
+
+void Networking::process_one() {
+    if (auto *buf = packet_queue.get_readable()) {
+        net_in.process_one(*buf);
+        packet_queue.put_writable(buf); // We're done with it.
+    } else {
+        PacketBuffer recv_into;
+        net_in.process_one(recv_into);
     }
 }
 
