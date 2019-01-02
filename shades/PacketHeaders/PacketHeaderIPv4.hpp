@@ -52,10 +52,10 @@ public:
     uint32_t ip_int; // Stored in network byte order.
 
     IPv4Address() : ip_int(0) {};
-    IPv4Address(uint32_t ip_int) : ip_int(ip_int) {};
+    IPv4Address(uint32_t ip_int) : ip_int(ip_int) {}; // Network byte order!
     IPv4Address(const IPv4Address &ip) : ip_int(ip.ip_int) {};
     IPv4Address(const std::string_view s) : ip_int(str_to_ip(s)) {};
-    
+
     inline std::string as_string() const {
         return ip_to_str(ip_int);
     };
@@ -86,20 +86,29 @@ public:
     inline static size_t size() {
         return sizeof(ip_int);
     }
-    
+
     inline bool operator==(const IPv4Address &other) const { return this->ip_int == other.ip_int; }
     inline bool operator!=(const IPv4Address &other) const { return this->ip_int != other.ip_int; }
-    
+
     inline bool operator==(const uint32_t &other) const { return this->ip_int == other; }
     inline bool operator!=(const uint32_t &other) const { return this->ip_int != other; }
-    
+
     inline bool operator==(const std::string_view other) const { return this->ip_int == str_to_ip(other); }
     inline bool operator!=(const std::string_view other) const { return this->ip_int != str_to_ip(other); }
-    
+
     inline operator bool() const {
         return ip_int != 0;
     }
-    
+
+    // These two operate on host byte order ints.
+    inline uint32_t as_int() const {
+        return ntohl(ip_int);
+    }
+
+    inline void from_int(uint32_t from) {
+        ip_int = htonl(from);
+    }
+
     IPv4Address apply_mask_bits(size_t) const;
 };
 

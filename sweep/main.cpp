@@ -25,6 +25,7 @@ enum REPLY_STATE {
 };
 
 std::map<IPv4Address, enum REPLY_STATE> query_results;
+size_t received = 0;
 
 bool got_packet(size_t callback_id, void *data, NetworkingInput &net, PacketHeader &ph) {
     PacketHeaderICMP &icmp = dynamic_cast<PacketHeaderICMP &>(ph);
@@ -54,6 +55,7 @@ bool got_packet(size_t callback_id, void *data, NetworkingInput &net, PacketHead
     }
 
     query_results[source_ip] = REPLY;
+    received++;
 
     return true;
 }
@@ -109,7 +111,7 @@ int main(int argc, const char *argv[]) {
 
     if (!ip_range.addr.ip_int || !ip_range.mask.mask) usage();
 
-    IPv4Address source_ip = OSNetwork::get_local_addr_for_remote(htonl(ntohl(ip_range.addr.ip_int) + 1));
+    IPv4Address source_ip = OSNetwork::get_local_addr_for_remote(ip_range.addr);
     IPv4AddressAndMask bind_to;
     auto interfaces = OSNetwork::get_interfaces();
     for (const auto &i : *interfaces) {
@@ -145,13 +147,16 @@ int main(int argc, const char *argv[]) {
 
     std::clog << "Sending ping query to all of " << ip_range.as_string() << " from " << bind_to.as_string() << " on " << iface << "\n---\n";
 
-    for(IPv4Address ip(ip_range.addr); ip_range.contains(ip); ip.ip_int = htonl(ntohl(ip.ip_int) + 1)) {
+    size_t sent = 0;
+    for(IPv4Address ip(ip_range.addr); ip_range.contains(ip); ip.from_int(ip.as_int() + 1)) {
         ping_ip(net, ip);
+        sent++;
         net.process_one();
     }
 
+    // Wait 2 more seconds for any straggler replies.
     auto start = std::chrono::steady_clock::now();
-    while(std::chrono::steady_clock::now() - start < std::chrono::seconds(2)) {
+    while(received < sent && std::chrono::steady_clock::now() - start < std::chrono::seconds(2)) {
         net.process_one();
     }
 
